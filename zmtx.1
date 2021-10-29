@@ -1,0 +1,47 @@
+.TH ZMTX 1 "July 1994"
+.SH NAME
+zmtx \- transmit file using ZMODEM protocol
+.SH SYNOPSIS
+.B zmtx
+[
+.B \-nopdv
+] [
+.B \-l\fIline\fP
+]
+.SH DESCRIPTION
+.I zmtx
+transmits a file using the ZMODEM file transfer protocol.
+By default,
+.I zmtx
+reads
+.I stdin
+and writes
+.IR stdout.
+.SH OPTIONS
+.TP
+.B \-l\fIline\fP
+File (typically a tty) to use for the transfer instead
+of
+.IR stdin/stdout.
+.TP
+.B \-n
+Transfer only if source is newer than destination.
+.TP
+.B \-o,\-p
+Overwrite (protect) the destination if it exists.
+The default is to protect the destination.  These
+flags interact in a complicated way with similar
+options at the receiving end -- see the protocol
+specification, or be careful.
+.TP
+.B \-v
+Verbose mode.
+.TP
+.B \-d
+Debug mode.
+.SH "SEE ALSO"
+.PD
+.BR  zmrx(1), sz(1), rz(1)
+.SH AUTHOR
+Jacques Mattheij <jacquesm@hacktic.nl>
+

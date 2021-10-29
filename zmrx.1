@@ -1,0 +1,50 @@
+.TH ZMRX 1 "July 1994"
+.SH NAME
+zmrx \- receive file using ZMODEM protocol
+.SH SYNOPSIS
+.B zmrx
+[
+.B \-jnopdvq
+] [
+.B \-l\fIline\fP
+]
+.SH DESCRIPTION
+.I zmrx
+receives a file using the ZMODEM file transfer protocol.
+By default,
+.I zmrx
+reads
+.I stdin
+and writes
+.IR stdout.
+.SH OPTIONS
+.TP
+.B \-l\fIline\fP
+File (typically a tty) to use for the transfer instead
+of
+.IR stdin/stdout.
+.TP
+.B \-j
+Junk any path components of the filename: receive into the
+base filename in the current directory.
+.TP
+.B \-n
+Transfer only if source is newer than destination.
+.TP
+.B \-o,\-p
+Overwrite (protect) the destination if it exists.
+The default is to protect the destination.  These
+flags interact in a complicated way with similar
+options at the receiving end -- see the protocol
+specification, or be careful.
+.TP
+.B \-v,\-q
+Verbose (quiet) mode.
+.TP
+.B \-d
+Debug mode.
+.SH "SEE ALSO"
+.PD
+.BR  zmtx(1), sz(1), rz(1)
+.SH AUTHOR
+Jacques Mattheij <jacquesm@hacktic.nl>
