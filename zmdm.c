@@ -217,10 +217,10 @@ void tx_bin32_header(unsigned char *p)
 
     crc = ~crc;
 
-    tx(crc);
-    tx(crc >> 8);
-    tx(crc >> 16);
-    tx(crc >> 24);
+    tx((unsigned char)(crc & 0xFF));
+    tx((unsigned char)((crc >> 8) & 0xFF));
+    tx((unsigned char)((crc >> 16) & 0xFF));
+    tx((unsigned char)((crc >> 24) & 0xFF));
 }
 
 void tx_bin16_header(unsigned char *p)
@@ -492,6 +492,7 @@ void tx_znak()
             }
         } while (FALSE);
     }
+    return c;
 }
 
 /*
@@ -542,10 +543,10 @@ int rx_32_data(unsigned char *p, int *l)
 
     crc = ~crc;
 
-    rxd_crc = rx(1000);
-    rxd_crc |= rx(1000) << 8;
-    rxd_crc |= rx(1000) << 16;
-    rxd_crc |= rx(1000) << 24;
+    rxd_crc = (long)rx(1000);
+    rxd_crc |= (long)rx(1000) << 8;
+    rxd_crc |= (long)rx(1000) << 16;
+    rxd_crc |= (long)rx(1000) << 24;
 
     if (rxd_crc != crc) {
         return FALSE;
@@ -590,8 +591,8 @@ int rx_16_data(register unsigned char *p, int *l)
     crc = UPDCRC16(0, crc);
     crc = UPDCRC16(0, crc);
 
-    rxd_crc = rx(1000) << 8;
-    rxd_crc |= rx(1000);
+    rxd_crc = (short)rx(1000) << 8;
+    rxd_crc |= (short)rx(1000);
 
     if (rxd_crc != crc) {
         return FALSE;
@@ -657,6 +658,7 @@ int rx_data(unsigned char *p, int *l)
     default:
         return FALSE;
     }
+    return FALSE;
 }
 
 /*inline*/ int rx_nibble(int timeout)
@@ -855,9 +857,9 @@ void rx_bin32_header(int to)
     crc = ~crc;
 
     rxd_crc = rx(1000);
-    rxd_crc |= rx(1000) << 8;
-    rxd_crc |= rx(1000) << 16;
-    rxd_crc |= rx(1000) << 24;
+    rxd_crc |= ((long)rx(1000)) << 8;
+    rxd_crc |= ((long)rx(1000)) << 16;
+    rxd_crc |= ((long)rx(1000)) << 24;
 
     if (rxd_crc != crc) {
         return;
@@ -967,8 +969,8 @@ int rx_header_raw(int timeout, int errors)
      */
 
     if (rxd_header[0] == ZDATA) {
-        ack_file_pos = rxd_header[ZP0] | (rxd_header[ZP1] << 8) |
-                       (rxd_header[ZP2] << 16) | (rxd_header[ZP3] << 24);
+        ack_file_pos = rxd_header[ZP0] | ((long)rxd_header[ZP1] << 8) |
+                       ((long)rxd_header[ZP2] << 16) | ((long)rxd_header[ZP3] << 24);
     }
 
     if (rxd_header[0] == ZFILE) {

@@ -55,7 +55,7 @@ void show_progress(char *progress_fname, FILE *progress_fp)
     long cps;
 
     if (current_file_size > 0) {
-        percentage = (ftell(progress_fp) * 100) / current_file_size;
+        percentage = ((long)ftell(progress_fp) * 100) / current_file_size;
     } else {
         percentage = 100;
     }
@@ -66,7 +66,7 @@ void show_progress(char *progress_fname, FILE *progress_fp)
         duration = 1;
     }
 
-    cps = ftell(progress_fp) / duration;
+    cps = (long)ftell(progress_fp) / duration;
 
     fprintf(stderr,
             "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)         "
@@ -111,8 +111,12 @@ int receive_file_data(char *receive_fname, FILE *receive_fp)
             }
         } while (type != ZDATA);
 
-        pos = rxd_header[ZP0] | (rxd_header[ZP1] << 8) |
-              (rxd_header[ZP2] << 16) | (rxd_header[ZP3] << 24);
+        long pos0 =  (long) rxd_header[ZP0];
+        long pos1 = ((long) rxd_header[ZP1]) << 8;
+        long pos2 = ((long) rxd_header[ZP2]) << 16;
+        long pos3 = ((long) rxd_header[ZP3]) << 24;
+
+        pos = pos0 | pos1 | pos2 | pos3;
     } while (pos != ftell(receive_fp));
 
     do {
@@ -154,10 +158,10 @@ void receive_file()
     long size;
     int type;
     int l;
-    int clobber;
-    int protect;
-    int newer;
-    char *mode = "wb";
+    int clobber = FALSE;
+    int protect = FALSE;
+    int newer = FALSE;
+    const char *mode = "wb";
 
     /*
      * fetch the management info bits from the ZRFILE header
@@ -216,8 +220,8 @@ void receive_file()
         fprintf(stderr, "zmrx: receiving file \"%s\"\r", name);
     }
 
-    sscanf((const char *)(rx_data_subpacket +
-                          strlen((const char *)rx_data_subpacket) + 1),
+    sscanf((char *)(rx_data_subpacket +
+                          strlen((char *)rx_data_subpacket) + 1),
            "%ld %lo", &size, &mdate);
 
     current_file_size = size;
