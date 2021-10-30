@@ -7,6 +7,19 @@ run standalone on the Atart ST and CP/M-80 2.2.
 
 This is currently a work-in-progress.
 
+## BUILDING
+
+To build on UNIX with GCC, simply use make.
+
+For CP/M, you'll need to have [Z88DK](https://z88dk.org/site) available.
+Ensure that `zcc` is in your path. Then do
+
+    % make -f makefile.cpm
+
+This will produce ZMRX.COM and ZMTX.COM. ZMRX.COM is ported
+but not tested. ZMTX.COM has a stub for `get_file_size()` which
+will need to be implemented.
+
 ## MOTIVATION AND HISTORY
 
 Though Chuck Fosberg's ZMODEM is way past it's prime from the
@@ -32,7 +45,7 @@ program's ZMODEM code.
 Because SyncTerm uses the GPL v2.0 license, that's the 
 license I've assigned to this code base.
 
-## READ FROM ORIGINAL zmtx-zmrx-1.02.tar.gz
+## README FROM ORIGINAL zmtx-zmrx-1.02.tar.gz
 
 [Lightly edited for readability.]
 
