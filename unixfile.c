@@ -24,3 +24,9 @@ void fileio_set_modification_time(const char *filename, long mdate) {
 
     utime(filename, &tv);
 }
+
+long get_file_size(FILE *fp) {
+    struct stat s;
+    fstat(fileno(fp), &s);
+    return s.st_size;
+}

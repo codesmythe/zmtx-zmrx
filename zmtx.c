@@ -24,6 +24,7 @@
 #include "opts.h"
 #include "zmdm.h"
 #include "zmodem.h"
+#include "fileio.h"
 
 #define MAX_SUBPACKETSIZE 1024
 
@@ -51,7 +52,7 @@ void show_progress(char *name, FILE *fp)
     long percentage;
 
     if (current_file_size > 0) {
-        percentage = (ftell(fp) * 100) / current_file_size;
+        percentage = ((long)ftell(fp) * 100) / current_file_size;
     } else {
         percentage = 100;
     }
@@ -62,7 +63,7 @@ void show_progress(char *name, FILE *fp)
         duration = 1l;
     }
 
-    cps = ftell(fp) / duration;
+    cps = (long)ftell(fp) / duration;
 
     fprintf(
         stderr,
@@ -202,9 +203,7 @@ int send_file(char *name)
         return TRUE;
     }
 
-    fstat(fileno(fp), &s);
-    size = s.st_size;
-    current_file_size = size;
+    size = current_file_size = get_file_size(fp);
 
     /*
      * the file exists. now build the ZFILE frame
@@ -369,8 +368,8 @@ int send_file(char *name)
          */
 
         if (type == ZRPOS) {
-            pos = rxd_header[ZP0] | (rxd_header[ZP1] << 8) |
-                  (rxd_header[ZP2] << 16) | (rxd_header[ZP3] << 24);
+            pos = (long)rxd_header[ZP0] | ((long)rxd_header[ZP1] << 8) |
+                  ((long)rxd_header[ZP2] << 16) | ((long)rxd_header[ZP3] << 24);
         }
 
         /*
