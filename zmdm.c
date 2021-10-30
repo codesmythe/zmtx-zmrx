@@ -22,12 +22,6 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
-#ifdef UNITE
-#include <sys/select.h>
-#endif
-#ifdef SUNOS4
-#include <sys/types.h>
-#endif
 
 #include <sys/time.h>
 
@@ -873,7 +867,7 @@ int rx_data(unsigned char *p, int *l)
     }
 }
 
-inline int rx_nibble(int to)
+/*inline*/ int rx_nibble(int to)
 
 {
     int c;

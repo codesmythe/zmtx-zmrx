@@ -1,6 +1,5 @@
 CC=gcc
-#CFLAGS=-O -DUNITE
-CFLAGS=-O -DSUNOS4
+CFLAGS=-O3 -Wall -Werror
 
 all:	zmtx zmrx
 
