@@ -392,7 +392,7 @@ void tx_znak()
  * is relatively short.
  */
 
-/*inline*/ int rx(int to)
+/*inline*/ int rx(int timeout)
 
 {
     int c;
@@ -411,7 +411,7 @@ void tx_znak()
          */
 
         do {
-            c = rx_raw(to);
+            c = rx_raw(timeout);
             if (c == TIMEOUT) {
                 return c;
             }
@@ -442,17 +442,17 @@ void tx_znak()
 
         /*
          * ZDLE encoded sequence or session abort.
-         * (or something illegal; then back to the top)
+         * (or something illegal; then back timeout the top)
          */
 
         do {
-            c = rx_raw(to);
+            c = rx_raw(timeout);
 
             if (c == 0x11 || c == 0x13 || c == 0x91 || c == 0x93 || c == ZDLE) {
                 /*
                  * these can be dropped.
                  */
-                break;
+                continue;
             }
 
             switch (c) {
@@ -483,7 +483,7 @@ void tx_znak()
                 }
                 /*
                  * legitimate escape sequence.
-                 * rebuild the orignal and return it.
+                 * rebuild the original and return it.
                  */
                 if ((c & 0x60) == 0x40) {
                     return c ^ 0x40;
@@ -659,12 +659,12 @@ int rx_data(unsigned char *p, int *l)
     }
 }
 
-/*inline*/ int rx_nibble(int to)
+/*inline*/ int rx_nibble(int timeout)
 
 {
     int c;
 
-    c = rx(to);
+    c = rx(timeout);
 
     if (c == TIMEOUT) {
         return c;
@@ -694,19 +694,19 @@ int rx_data(unsigned char *p, int *l)
     return c;
 }
 
-int rx_hex(int to)
+int rx_hex(int timeout)
 
 {
     int n1;
     int n0;
 
-    n1 = rx_nibble(to);
+    n1 = rx_nibble(timeout);
 
     if (n1 == TIMEOUT) {
         return n1;
     }
 
-    n0 = rx_nibble(to);
+    n0 = rx_nibble(timeout);
 
     if (n0 == TIMEOUT) {
         return n0;
@@ -717,11 +717,11 @@ int rx_hex(int to)
 
 /*
  * receive routines for each of the six different styles of header.
- * each of these leaves rxd_header_len set to 0 if the end result is
+ * each of these leaves rxd_header_len set timeout 0 if the end result is
  * not a valid header.
  */
 
-void rx_bin16_header(int to)
+void rx_bin16_header(int timeout)
 
 {
     int c;
@@ -736,7 +736,7 @@ void rx_bin16_header(int to)
     crc = 0;
 
     for (n = 0; n < 5; n++) {
-        c = rx(to);
+        c = rx(timeout);
         if (c == TIMEOUT) {
 #ifdef DEBUG
             fprintf(stderr, "timeout\n");
@@ -763,7 +763,7 @@ void rx_bin16_header(int to)
     rxd_header_len = 5;
 }
 
-void rx_hex_header(int to)
+void rx_hex_header(int timeout)
 
 {
     int c;
@@ -775,7 +775,7 @@ void rx_hex_header(int to)
     fprintf(stderr, "rx_hex_header : ");
 #endif
     for (i = 0; i < 5; i++) {
-        c = rx_hex(to);
+        c = rx_hex(timeout);
         if (c == TIMEOUT) {
             return;
         }
@@ -792,7 +792,7 @@ void rx_hex_header(int to)
      * receive the crc
      */
 
-    c = rx_hex(to);
+    c = rx_hex(timeout);
 
     if (c == TIMEOUT) {
         return;
@@ -800,7 +800,7 @@ void rx_hex_header(int to)
 
     rxd_crc = c << 8;
 
-    c = rx_hex(to);
+    c = rx_hex(timeout);
 
     if (c == TIMEOUT) {
         return;
@@ -820,12 +820,12 @@ void rx_hex_header(int to)
     /*
      * drop the end of line sequence after a hex header
      */
-    c = rx(to);
+    c = rx(timeout);
     if (c == CR) {
         /*
          * both are expected with CR
          */
-        rx(to);
+        rx(timeout);
     }
 }
 
@@ -870,12 +870,12 @@ void rx_bin32_header(int to)
  * receive any style header
  * if the errors flag is set than whenever an invalid header packet is
  * received INVHDR will be returned. otherwise we wait for a good header
- * also; a flag (receive_32_bit_data) will be set to indicate whether data
+ * also; a flag (receive_32_bit_data) will be set timeout indicate whether data
  * packets following this header will have 16 or 32 bit data attached.
  * variable headers are not implemented.
  */
 
-int rx_header_raw(int to, int errors)
+int rx_header_raw(int timeout, int errors)
 
 {
     int c;
@@ -887,19 +887,19 @@ int rx_header_raw(int to, int errors)
 
     do {
         do {
-            c = rx_raw(to);
+            c = rx_raw(timeout);
             if (c == TIMEOUT) {
                 return c;
             }
         } while (c != ZPAD);
 
-        c = rx_raw(to);
+        c = rx_raw(timeout);
         if (c == TIMEOUT) {
             return c;
         }
 
         if (c == ZPAD) {
-            c = rx_raw(to);
+            c = rx_raw(timeout);
             if (c == TIMEOUT) {
                 return c;
             }
@@ -920,7 +920,7 @@ int rx_header_raw(int to, int errors)
          * now read the header style
          */
 
-        c = rx(to);
+        c = rx(timeout);
 
         if (c == TIMEOUT) {
             return c;
@@ -931,15 +931,15 @@ int rx_header_raw(int to, int errors)
 #endif
         switch (c) {
         case ZBIN:
-            rx_bin16_header(to);
+            rx_bin16_header(timeout);
             receive_32_bit_data = FALSE;
             break;
         case ZHEX:
-            rx_hex_header(to);
+            rx_hex_header(timeout);
             receive_32_bit_data = FALSE;
             break;
         case ZBIN32:
-            rx_bin32_header(to);
+            rx_bin32_header(timeout);
             receive_32_bit_data = TRUE;
             break;
         default:
@@ -962,7 +962,7 @@ int rx_header_raw(int to, int errors)
     } while (rxd_header_len == 0);
 
     /*
-     * this appears to have been a valid header.
+     * this appears timeout have been a valid header.
      * return its type.
      */
 
