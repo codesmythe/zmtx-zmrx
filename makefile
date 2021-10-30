@@ -1,26 +1,36 @@
-CC=gcc
-CFLAGS=-O3 -Wall -Werror
 
-all:	zmtx zmrx
+DEPDIR := .deps
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
-zmtx:	zmtx.o zmdm.o crctab.o unixterm.o unixfile.o
-	$(CC) $(CFLAGS) $(OFLAG) zmtx.o zmdm.o crctab.o unixterm.o unixfile.o -o zmtx
+SRC   = zmrx.c zmtx.c zmdm.c crctab.c unixterm.c unixfile.c
+RZOBJ = zmrx.o zmdm.o crctab.o unixterm.o unixfile.o
+SZOBJ = zmtx.o zmdm.o crctab.o unixterm.o unixfile.o
 
-zmrx:	zmrx.o zmdm.o crctab.o unixterm.o unixfile.o
-	$(CC) $(CFLAGS) $(OFLAG) zmrx.o zmdm.o crctab.o unixterm.o unixfile.o -o zmrx
 
-zmtx.o:		zmtx.c
-zmrx.o:		zmrx.c
+CFLAGS := -Wall -Werror -std=c99 -O3
 
-zmdm.o:		zmdm.c
-crctab.o:	crctab.c
+COMPILE.c = $(CC) $(DEPFLAGS) $(CFLAGS) -c
 
-unixterm.o:	unixterm.c 
+ALL = zmtx zmrx
 
-unixfile.o:     unixfile.c
+all: $(DEPDIR) $(ALL)
+
+zmrx: $(RZOBJ)
+	$(CC) $(CFLAGS) $(RZOBJ) -o zmrx 
+
+zmtx: $(SZOBJ)
+	$(CC) $(CFLAGS) $(SZOBJ) -o zmtx 
+
+%.o : %.c $(DEPDIR)/%d | $(DEPDIR)
+	$(COMPILE.c) $<
+
+$(DEPDIR): 
+	@mkdir -p $@
+
+DEPFILES := $(SRC:%.c=$(DEPDIR)/%.d)
+$(DEPFILES):
+
+include $(wildcard $(DEPFILES))
 
 clean:
-	rm -f *.o
-	rm -f zmtx zmrx
-
-
+	rm -f *.o $(ALL)
