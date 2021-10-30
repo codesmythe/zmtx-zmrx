@@ -18,10 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <time.h>
-#include <utime.h>
 
+#include "fileio.h"
 #include "opts.h"
 #include "zmdm.h"
 #include "zmodem.h"
@@ -47,15 +46,16 @@ time_t transfer_start;
  * avoids the use of floating point.
  */
 
-void show_progress(char *fname, FILE *fptr)
+void show_progress(char *progress_fname, FILE *progress_fp)
 
 {
     long percentage;
+
     time_t duration;
     long cps;
 
     if (current_file_size > 0) {
-        percentage = (ftell(fptr) * 100) / current_file_size;
+        percentage = (ftell(progress_fp) * 100) / current_file_size;
     } else {
         percentage = 100;
     }
@@ -66,12 +66,12 @@ void show_progress(char *fname, FILE *fptr)
         duration = 1;
     }
 
-    cps = ftell(fptr) / duration;
+    cps = ftell(progress_fp) / duration;
 
     fprintf(stderr,
             "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)         "
             "  \r",
-            fname, ftell(fptr), percentage, cps);
+            progress_fname, ftell(progress_fp), percentage, cps);
 }
 
 /*
@@ -80,10 +80,10 @@ void show_progress(char *fname, FILE *fptr)
 
 /*
  * receive file data until the end of the file or until something goes wrong.
- * the fname is only used to show progress
+ * the receive_fname is only used to show progress
  */
 
-int receive_file_data(char *fname, FILE *fptr)
+int receive_file_data(char *receive_fname, FILE *receive_fp)
 
 {
     long pos;
@@ -94,9 +94,9 @@ int receive_file_data(char *fname, FILE *fptr)
      * create a ZRPOS frame and send it to the other side
      */
 
-    tx_pos_header(ZRPOS, ftell(fptr));
+    tx_pos_header(ZRPOS, ftell(receive_fp));
 
-    /*	fprintf(stderr,"re-transmit from %d\n",ftell(fptr));
+    /*	fprintf(stderr,"re-transmit from %d\n",ftell(receive_fp));
      */
     /*
      * wait for a ZDATA header with the right file offset
@@ -113,7 +113,7 @@ int receive_file_data(char *fname, FILE *fptr)
 
         pos = rxd_header[ZP0] | (rxd_header[ZP1] << 8) |
               (rxd_header[ZP2] << 16) | (rxd_header[ZP3] << 24);
-    } while (pos != ftell(fptr));
+    } while (pos != ftell(receive_fp));
 
     do {
         type = rx_data(rx_data_subpacket, &n);
@@ -121,11 +121,11 @@ int receive_file_data(char *fname, FILE *fptr)
         /*		fprintf(stderr,"packet len %d type %d\n",n,type);
          */
         if (type == ENDOFFRAME || type == FRAMEOK) {
-            fwrite(rx_data_subpacket, 1, n, fptr);
+            fwrite(rx_data_subpacket, 1, n, receive_fp);
         }
 
         if (opt_v) {
-            show_progress(fname, fptr);
+            show_progress(receive_fname, receive_fp);
         }
 
     } while (type == FRAMEOK);
@@ -152,14 +152,11 @@ void receive_file()
 
 {
     long size;
-    struct stat s;
     int type;
     int l;
     int clobber;
     int protect;
     int newer;
-    int exists;
-    struct utimbuf tv;
     char *mode = "wb";
 
     /*
@@ -229,24 +226,15 @@ void receive_file()
      * decide whether to transfer the file or skip it
      */
 
-    fp = fopen(name, "rb");
-
-    if (fp != NULL) {
-        exists = TRUE;
-
-        fstat(fileno(fp), &s);
-
-        fclose(fp);
-    } else {
-        exists = FALSE;
-    }
+    /* Returns -1 of the file does not exists; modification time otherwise */
+    long existing_file_modification_time = fileio_get_modification_time(name);
 
     /*
      * if the file already exists here the management options need to
      * be checked..
      */
-    if (exists) {
-        if (mdate == s.st_mtime) {
+    if (existing_file_modification_time != -1) {
+        if (mdate == existing_file_modification_time) {
             /*
              * this is crash recovery
              */
@@ -267,10 +255,14 @@ void receive_file()
                  * if the remote file has to be newer
                  */
                 if (newer) {
-                    if (mdate < s.st_mtime) {
+                    if (mdate < existing_file_modification_time) {
+                        fprintf(stderr,
+                                "zmrx: file '%s' skipped becaused local file "
+                                "in newer.\n",
+                                name);
                         tx_pos_header(ZSKIP, 0L);
                         /*
-                         * and it isnt then exit here.
+                         * and it isn't then exit here.
                          */
                         return;
                     }
@@ -290,7 +282,7 @@ void receive_file()
     if (fp == NULL) {
         tx_pos_header(ZSKIP, 0L);
         if (opt_v) {
-            fprintf(stderr, "zmrx: can't open file %s\n", name);
+            fprintf(stderr, "zmrx: can't open file '%s'\n", name);
         }
         return;
     }
@@ -320,14 +312,7 @@ void receive_file()
 
     fp = NULL;
 
-    /*
-     * set the time
-     */
-
-    tv.actime = mdate;
-    tv.modtime = mdate;
-
-    utime(name, &tv);
+    fileio_set_modification_time(name, mdate);
 
     /*
      * and close the input file
@@ -341,19 +326,13 @@ void receive_file()
 void cleanup(void)
 
 {
-    struct utimbuf tv;
-
     if (fp) {
         fflush(fp);
         fclose(fp);
         /*
          * set the time (so crash recovery may work)
          */
-
-        tv.actime = mdate;
-        tv.modtime = mdate;
-
-        utime(name, &tv);
+        fileio_set_modification_time(name, mdate);
     }
 
     fd_exit();
@@ -492,7 +471,7 @@ int main(int argc, char **argv)
         if (type == ZFILE)
             receive_file();
         else
-            tx_pos_header(ZCOMPL, 0l);
+            tx_pos_header(ZCOMPL, 0L);
 
         do {
             tx_zrinit();
@@ -538,5 +517,5 @@ int main(int argc, char **argv)
 
     cleanup();
 
-    exit(0);
+    return 0;
 }

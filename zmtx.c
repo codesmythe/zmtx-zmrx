@@ -175,7 +175,7 @@ int send_from(char *name, FILE *fp)
 int send_file(char *name)
 
 {
-    long pos;
+    long pos = 0;
     long size;
     struct stat s;
     FILE *fp;
@@ -623,5 +623,5 @@ int main(int argc, char **argv)
 
     cleanup();
 
-    exit(0);
+    return 0;
 }
