@@ -19,7 +19,9 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <termios.h>
+#include <unistd.h>
 #ifdef UNITE
 #include <sys/select.h>
 #endif
@@ -146,7 +148,6 @@ void tx(unsigned char c)
     case ZDLE:
         tx_esc(c);
         return;
-        break;
     case 0x8d:
     case 0x0d:
         if (escape_all_control_characters && last_sent == '@') {
@@ -162,7 +163,6 @@ void tx(unsigned char c)
     case 0x93:
         tx_esc(c);
         return;
-        break;
     default:
         if (escape_all_control_characters && (c & 0x60) == 0) {
             tx_esc(c);
@@ -383,7 +383,6 @@ void tx_header(unsigned char *p)
 void tx_32_data(int sub_frame_type, unsigned char *p, int l)
 
 {
-    int c;
     unsigned long crc;
 
 #ifdef DEBUG
@@ -463,7 +462,7 @@ void tx_data(int sub_frame_type, unsigned char *p, int l)
 void tx_pos_header(int type, long pos)
 
 {
-    char header[5];
+    unsigned char header[5];
 
     header[0] = type;
     header[ZP0] = pos & 0xff;
@@ -482,12 +481,6 @@ void tx_znak()
     tx_pos_header(ZNAK, ack_file_pos);
 }
 
-void tx_zskip()
-
-{
-    tx_pos_header(ZSKIP, 0L);
-}
-
 /*
  * receive any style header within timeout milliseconds
  */
@@ -503,7 +496,6 @@ int rx_poll()
 {
     struct timeval t;
     fd_set f;
-    unsigned char c;
 
     t.tv_sec = 0;
     t.tv_usec = 0;
@@ -534,7 +526,6 @@ int inputbuffer_index;
 inline int rx_raw(int to)
 
 {
-    int n;
     unsigned char c;
     static int n_cans = 0;
 
@@ -615,7 +606,7 @@ inline int rx_raw(int to)
  * is relatively short.
  */
 
-inline int rx(int to)
+/*inline*/ int rx(int to)
 
 {
     int c;
@@ -647,11 +638,11 @@ inline int rx(int to)
             case 0x13:
             case 0x93:
                 continue;
-                break;
             default:
                 /*
-                 * if all control characters should be escaped and
-                 * this one wasnt then its spurious and should be dropped.
+                 * if all control characters should be escaped
+                 * and this one wasnt then its spurious and
+                 * should be dropped.
                  */
                 if (escape_all_control_characters && (c & 0x60) == 0) {
                     continue;
@@ -675,7 +666,7 @@ inline int rx(int to)
                 /*
                  * these can be dropped.
                  */
-                continue;
+                break;
             }
 
             switch (c) {
@@ -691,18 +682,16 @@ inline int rx(int to)
             case ZCRCQ:
             case ZCRCW:
                 return (c | ZDLEESC);
-                break;
             case ZRUB0:
                 return 0x7f;
-                break;
             case ZRUB1:
                 return 0xff;
-                break;
             default:
                 if (escape_all_control_characters && (c & 0x60) == 0) {
                     /*
-                     * a not escaped control character; probably
-                     * something from a network. just drop it.
+                     * a not escaped control character;
+                     * probably something from a network.
+                     * just drop it.
                      */
                     continue;
                 }
@@ -717,12 +706,6 @@ inline int rx(int to)
             }
         } while (FALSE);
     }
-
-    /*
-     * not reached.
-     */
-
-    return 0;
 }
 
 /*
@@ -836,7 +819,6 @@ int rx_16_data(register unsigned char *p, int *l)
 int rx_data(unsigned char *p, int *l)
 
 {
-    unsigned char zack_header[] = {ZACK, 0, 0, 0, 0};
     int sub_frame_type;
     long pos;
 
@@ -863,36 +845,32 @@ int rx_data(unsigned char *p, int *l)
     switch (sub_frame_type) {
     case TIMEOUT:
         return TIMEOUT;
-        break;
     /*
      * frame continues non-stop
      */
     case ZCRCG:
         return FRAMEOK;
-        break;
     /*
      * frame ends
      */
     case ZCRCE:
         return ENDOFFRAME;
-        break;
     /*
      * frame continues; ZACK expected
      */
     case ZCRCQ:
         tx_pos_header(ZACK, pos);
         return FRAMEOK;
-        break;
     /*
      * frame ends; ZACK expected
      */
     case ZCRCW:
         tx_pos_header(ZACK, pos);
         return ENDOFFRAME;
-        break;
-    }
 
-    return FALSE;
+    default:
+        return FALSE;
+    }
 }
 
 inline int rx_nibble(int to)
@@ -1061,7 +1039,7 @@ void rx_hex_header(int to)
         /*
          * both are expected with CR
          */
-        c = rx(to);
+        rx(to);
     }
 }
 
@@ -1190,7 +1168,6 @@ int rx_header_raw(int to, int errors)
             }
 
             continue;
-            break;
         }
         if (errors && rxd_header_len == 0) {
             return INVHDR;

@@ -15,8 +15,8 @@
 
 #include "version.h"
 #include <ctype.h>
-#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -47,15 +47,15 @@ time_t transfer_start;
  * avoids the use of floating point.
  */
 
-void show_progress(char *name, FILE *fp)
+void show_progress(char *fname, FILE *fptr)
 
 {
-    int percentage;
+    long percentage;
     time_t duration;
-    int cps;
+    long cps;
 
     if (current_file_size > 0) {
-        percentage = (ftell(fp) * 100) / current_file_size;
+        percentage = (ftell(fptr) * 100) / current_file_size;
     } else {
         percentage = 100;
     }
@@ -66,12 +66,12 @@ void show_progress(char *name, FILE *fp)
         duration = 1;
     }
 
-    cps = ftell(fp) / duration;
+    cps = ftell(fptr) / duration;
 
-    fprintf(
-        stderr,
-        "zmrx: receiving file \"%s\" %8ld bytes (%3d %%/%5d cps)           \r",
-        name, ftell(fp), percentage, cps);
+    fprintf(stderr,
+            "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)         "
+            "  \r",
+            fname, ftell(fptr), percentage, cps);
 }
 
 /*
@@ -80,13 +80,12 @@ void show_progress(char *name, FILE *fp)
 
 /*
  * receive file data until the end of the file or until something goes wrong.
- * the name is only used to show progress
+ * the fname is only used to show progress
  */
 
-int receive_file_data(char *name, FILE *fp)
+int receive_file_data(char *fname, FILE *fptr)
 
 {
-    static int first = TRUE;
     long pos;
     int n;
     int type;
@@ -95,9 +94,9 @@ int receive_file_data(char *name, FILE *fp)
      * create a ZRPOS frame and send it to the other side
      */
 
-    tx_pos_header(ZRPOS, ftell(fp));
+    tx_pos_header(ZRPOS, ftell(fptr));
 
-    /*	fprintf(stderr,"re-transmit from %d\n",ftell(fp));
+    /*	fprintf(stderr,"re-transmit from %d\n",ftell(fptr));
      */
     /*
      * wait for a ZDATA header with the right file offset
@@ -114,7 +113,7 @@ int receive_file_data(char *name, FILE *fp)
 
         pos = rxd_header[ZP0] | (rxd_header[ZP1] << 8) |
               (rxd_header[ZP2] << 16) | (rxd_header[ZP3] << 24);
-    } while (pos != ftell(fp));
+    } while (pos != ftell(fptr));
 
     do {
         type = rx_data(rx_data_subpacket, &n);
@@ -122,11 +121,11 @@ int receive_file_data(char *name, FILE *fp)
         /*		fprintf(stderr,"packet len %d type %d\n",n,type);
          */
         if (type == ENDOFFRAME || type == FRAMEOK) {
-            fwrite(rx_data_subpacket, 1, n, fp);
+            fwrite(rx_data_subpacket, 1, n, fptr);
         }
 
         if (opt_v) {
-            show_progress(name, fp);
+            show_progress(fname, fptr);
         }
 
     } while (type == FRAMEOK);
@@ -203,7 +202,7 @@ void receive_file()
      * extract the relevant info from the header.
      */
 
-    strcpy(filename, rx_data_subpacket);
+    strcpy(filename, (const char *)rx_data_subpacket);
 
     if (junk_pathnames) {
         name = strrchr(filename, '/');
@@ -220,8 +219,9 @@ void receive_file()
         fprintf(stderr, "zmrx: receiving file \"%s\"\r", name);
     }
 
-    sscanf(rx_data_subpacket + strlen(rx_data_subpacket) + 1, "%ld %lo", &size,
-           &mdate);
+    sscanf((const char *)(rx_data_subpacket +
+                          strlen((const char *)rx_data_subpacket) + 1),
+           "%ld %lo", &size, &mdate);
 
     current_file_size = size;
 
@@ -391,15 +391,15 @@ int main(int argc, char **argv)
     while (--argc > 0 && ((*argv)[0] == '-')) {
         for (s = argv[0] + 1; *s != '\0'; s++) {
             switch (toupper(*s)) {
-                OPT_BOOL('D', opt_d);
-                OPT_BOOL('V', opt_v);
-                OPT_BOOL('Q', opt_q);
+                OPT_BOOL('D', opt_d)
+                OPT_BOOL('V', opt_v)
+                OPT_BOOL('Q', opt_q)
 
-                OPT_BOOL('N', management_newer);
-                OPT_BOOL('O', management_clobber);
-                OPT_BOOL('P', management_protect);
-                OPT_BOOL('J', junk_pathnames);
-                OPT_STRING('L', line);
+                OPT_BOOL('N', management_newer)
+                OPT_BOOL('O', management_clobber)
+                OPT_BOOL('P', management_protect)
+                OPT_BOOL('J', junk_pathnames)
+                OPT_STRING('L', line)
             default:
                 printf("zmrx: bad option %c\n", *s);
                 usage();
@@ -489,14 +489,10 @@ int main(int argc, char **argv)
      */
 
     do {
-        switch (type) {
-        case ZFILE:
+        if (type == ZFILE)
             receive_file();
-            break;
-        default:
+        else
             tx_pos_header(ZCOMPL, 0l);
-            break;
-        }
 
         do {
             tx_zrinit();
@@ -514,7 +510,6 @@ int main(int argc, char **argv)
     }
 
     {
-        int type;
         unsigned char zfin_header[] = {ZFIN, 0, 0, 0, 0};
 
         tx_hex_header(zfin_header);
@@ -527,12 +522,12 @@ int main(int argc, char **argv)
     {
         int c;
         do {
-            c = rx_raw();
+            c = rx_raw(0);
         } while (c != 'O' && c != TIMEOUT);
 
         if (c != TIMEOUT) {
             do {
-                c = rx_raw();
+                c = rx_raw(0);
             } while (c != 'O' && c != TIMEOUT);
         }
     }
@@ -544,6 +539,4 @@ int main(int argc, char **argv)
     cleanup();
 
     exit(0);
-
-    return 0; /* to stop the compiler from complaining */
 }

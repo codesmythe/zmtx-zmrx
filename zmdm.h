@@ -16,6 +16,8 @@
 
 #include <errno.h>
 
+#include "zmodem.h"
+
 #define TRUE 1
 #define FALSE 0
 
@@ -25,7 +27,8 @@
 #define INVHDR -2  /* invalid header received; but within timeout */
 #define INVDATA -3 /* invalid data subpacket received */
 #define ZDLEESC                                                                \
-    0x8000 /* one of ZCRCE; ZCRCG; ZCRCQ or ZCRCW was received; ZDLE escaped   \
+    0x8000 /* one of ZCRCE; ZCRCG; ZCRCQ or ZCRCW was received; ZDLE           \
+            * escaped                                                          \
             */
 
 #define HDRLEN 5 /* size of a zmodme header */
@@ -58,14 +61,39 @@ EXTERN int management_newer;
 EXTERN int management_clobber;
 EXTERN int management_protect;
 
+void cleanup(void);
+
 void fd_init(void); /* make the io channel raw */
 
 void fd_exit(void); /* reset io channel to state before zmtx was called */
 
-void tx_hheader(unsigned char *buf, int n);
+int rx_data(unsigned char *p, int *l);
+
+int rx_header(
+    int timeout); /* receive any header with timeout in milliseconds */
+
+int rx_header_and_check(int timeout);
+
+int rx_poll();
+
+void rx_purge(void);
+
+int rx_raw(int timeout);
 
 void tx_bheader(unsigned char *buf, int n);
 
-int rx_header(int to); /* receive any header with timeout in milliseconds */
+void tx_data(int sub_frame_type, unsigned char *p, int l);
+
+void tx_header(unsigned char *p);
+
+void tx_hex_header(unsigned char *p);
+
+void tx_hheader(unsigned char *buf, int n);
+
+void tx_pos_header(int type, long pos);
+
+void tx_raw(int c);
+
+void tx_znak(void);
 
 #endif

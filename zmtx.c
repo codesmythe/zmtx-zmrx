@@ -15,8 +15,8 @@
 
 #include "version.h"
 #include <ctype.h>
-#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -47,8 +47,8 @@ void show_progress(char *name, FILE *fp)
 
 {
     time_t duration;
-    int cps;
-    int percentage;
+    long cps;
+    long percentage;
 
     if (current_file_size > 0) {
         percentage = (ftell(fp) * 100) / current_file_size;
@@ -66,7 +66,7 @@ void show_progress(char *name, FILE *fp)
 
     fprintf(
         stderr,
-        "zmtx: sending file \"%s\" %8ld bytes (%3d %%/%5d cps)           \r",
+        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%/%5ld cps)           \r",
         name, ftell(fp), percentage, cps);
 }
 
@@ -80,9 +80,9 @@ void show_progress(char *name, FILE *fp)
 int send_from(char *name, FILE *fp)
 
 {
-    int n;
+    unsigned long n;
     int type = ZCRCG;
-    char zdata_frame[] = {ZDATA, 0, 0, 0, 0};
+    unsigned char zdata_frame[] = {ZDATA, 0, 0, 0, 0};
 
     /*
      * put the file position in the ZDATA frame
@@ -122,16 +122,16 @@ int send_from(char *name, FILE *fp)
             type = ZCRCW;
         }
 
-        tx_data(type, tx_data_subpacket, n);
+        tx_data(type, tx_data_subpacket, (int)n);
 
         if (type == ZCRCW) {
-            int type;
+            int type2;
             do {
-                type = rx_header(10000);
-                if (type == ZNAK || type == ZRPOS) {
-                    return type;
+                type2 = rx_header(10000);
+                if (type2 == ZNAK || type2 == ZRPOS) {
+                    return type2;
                 }
-            } while (type != ZACK);
+            } while (type2 != ZACK);
 
             if (ftell(fp) == current_file_size) {
                 if (opt_d) {
@@ -147,13 +147,13 @@ int send_from(char *name, FILE *fp)
          */
 
         while (rx_poll()) {
-            int type;
+            int type2;
             int c;
-            c = rx_raw();
+            c = rx_raw(0);
             if (c == ZPAD) {
-                type = rx_header(1000);
-                if (type != TIMEOUT && type != ACK) {
-                    return type;
+                type2 = rx_header(1000);
+                if (type2 != TIMEOUT && type2 != ACK) {
+                    return type2;
                 }
             }
         }
@@ -179,10 +179,9 @@ int send_file(char *name)
     long size;
     struct stat s;
     FILE *fp;
-    unsigned char *p;
-    char zfile_frame[] = {ZFILE, 0, 0, 0, 0};
-    char zeof_frame[] = {ZEOF, 0, 0, 0, 0};
-    int wait_for_header;
+    char *p;
+    unsigned char zfile_frame[] = {ZFILE, 0, 0, 0, 0};
+    unsigned char zeof_frame[] = {ZEOF, 0, 0, 0, 0};
     int type;
     char *n;
 
@@ -200,7 +199,7 @@ int send_file(char *name)
         if (opt_v) {
             fprintf(stderr, "zmtx: can't open file %s\n", name);
         }
-        return;
+        return TRUE;
     }
 
     fstat(fileno(fp), &s);
@@ -265,7 +264,7 @@ int send_file(char *name)
      * first enter the name and a 0
      */
 
-    p = tx_data_subpacket;
+    p = (char *)tx_data_subpacket;
 
     /*
      * strip the path name from the filename
@@ -336,7 +335,7 @@ int send_file(char *name)
          */
 
         tx_header(zfile_frame);
-        tx_data(ZCRCW, tx_data_subpacket, p - tx_data_subpacket);
+        tx_data(ZCRCW, tx_data_subpacket, p - (char *)tx_data_subpacket);
 
         /*
          * wait for anything but an ZACK packet
@@ -357,7 +356,7 @@ int send_file(char *name)
                         "zmtx: skipped file \"%s\"                       \n",
                         name);
             }
-            return;
+            return FALSE;
         }
 
     } while (type != ZRPOS);
@@ -457,13 +456,13 @@ int main(int argc, char **argv)
     while (--argc > 0 && ((*argv)[0] == '-')) {
         for (s = argv[0] + 1; *s != '\0'; s++) {
             switch (toupper(*s)) {
-                OPT_BOOL('D', opt_d);
-                OPT_BOOL('V', opt_v);
+                OPT_BOOL('D', opt_d)
+                OPT_BOOL('V', opt_v)
 
-                OPT_BOOL('N', management_newer);
-                OPT_BOOL('O', management_clobber);
-                OPT_BOOL('P', management_protect);
-                OPT_STRING('L', line);
+                OPT_BOOL('N', management_newer)
+                OPT_BOOL('O', management_clobber)
+                OPT_BOOL('P', management_protect)
+                OPT_STRING('L', line)
             default:
                 printf("zmtx: bad option %c\n", *s);
                 usage();
@@ -625,6 +624,4 @@ int main(int argc, char **argv)
     cleanup();
 
     exit(0);
-
-    return 0;
 }
