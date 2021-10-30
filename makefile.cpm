@@ -1,0 +1,27 @@
+# To compile using SDCC, add '-compiler=sdcc' to CC and remove -Werror from CFLAGS.
+
+CC=zcc +cpm
+CFLAGS=-O3 -Wall -Werror
+
+all:	zmrx.com zmtx.com
+
+zmtx.com:	zmtx.o zmdm.o crctab.o cpmterm.o cpmfile.o
+	$(CC) $(CFLAGS) $(OFLAG) zmtx.o zmdm.o crctab.o cpmterm.o cpmfile.o -o zmtx -create-app
+
+zmrx.com:	zmrx.o zmdm.o crctab.o cpmterm.o cpmfile.o
+	$(CC) $(CFLAGS) $(OFLAG) zmrx.o zmdm.o crctab.o cpmterm.o cpmfile.o -o zmrx -create-app
+
+# CP/M header dependencies are managed manually because I could not
+# quickly figure out how to make Z88DK handle it.
+
+zmrx.o: zmrx.c version.h fileio.h opts.h zmdm.h zmodem.h
+zmtx.o: zmtx.c version.h fileio.h opts.h zmdm.h zmodem.h
+zmdm.o: zmdm.c zmodem.h crctab.h zmdm.h
+crctab.o: crctab.c
+cpmterm.o: cpmterm.c zmodem.h zmdm.h
+cpmfile.o: cpmfile.c fileio.h
+
+clean:
+	rm -f *.o zmtx.com zmrx.com
+
+
