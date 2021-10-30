@@ -90,6 +90,8 @@ void tx_hex_header(unsigned char *p);
 
 void tx_hheader(unsigned char *buf, int n);
 
+void tx_flush(void);
+
 void tx_pos_header(int type, long pos);
 
 void tx_raw(int c);
