@@ -10,11 +10,11 @@
 
 extern int last_sent;
 
-int console_char_available(void) { return bdos(CPM_ICON, 0) == 0; }
+int console_char_available(void) { return bdos(CPM_ICON, 0) != 0; }
 
 void write_console(char ch) { bdos(CPM_DCIO, ch); }
 
-int read_console(void) { return (CPM_DCIO, 0xff); }
+int read_console(void) { return bdos(CPM_DCIO, 0xff); }
 
 /*
  * routines to make the io channel raw and restore it
@@ -108,7 +108,7 @@ int inputbuffer_index;
 
 /* inline */
 int rx_raw(int timeout) {
-    static int delay_factor = 1000;
+    static long delay_factor = 5000;
     static int n_cans = 0;
 
     if (n_in_inputbuffer == 0) {
