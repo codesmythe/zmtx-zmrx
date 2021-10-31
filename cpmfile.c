@@ -32,10 +32,9 @@ long get_file_size(FILE *fp)
   
     // calculating the size of the file
     long res = ftell(fp);
-  
-    // closing the file
-    fclose(fp);
-  
+    
+    // leave file open
+    
     return res;
 }
 
