@@ -379,7 +379,9 @@ void tx_pos_header(int type, long pos)
 void tx_znak()
 
 {
+#ifdef DEBUG
     fprintf(stderr, "tx_znak\n");
+#endif
 
     tx_pos_header(ZNAK, ack_file_pos);
 }
