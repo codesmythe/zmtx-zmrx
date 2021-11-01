@@ -12,13 +12,18 @@ This is currently a work-in-progress.
 To build on UNIX with GCC, simply use make.
 
 For CP/M, you'll need to have [Z88DK](https://z88dk.org/site) available.
-Ensure that `zcc` is in your path. Then do
+Ensure that `zcc` is in your path. Then for CP/M 2.2 compatible
+binaries that send and receive via the console, do
 
     % make -f makefile.cpm
 
-This will produce ZMRX.COM and ZMTX.COM. ZMRX.COM is ported
-but not tested. ZMTX.COM has a stub for `get_file_size()` which
-will need to be implemented.
+For CP/M 3 compatible binaries that send and receive via the
+AUX port, do
+
+    % make CPM3=1 -f makefile.cpm
+
+The binaries produced are ZMRX.COM and ZMTX.COM. Both 
+binaries are ported but not tested. 
 
 ## MOTIVATION AND HISTORY
 

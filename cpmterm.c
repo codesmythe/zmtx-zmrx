@@ -10,11 +10,36 @@
 
 extern int last_sent;
 
-int console_char_available(void) { return bdos(CPM_ICON, 0) != 0; }
+#ifdef CPM3
+
+/*
+ * For CP/M 3, we'll use the AUX port.
+ *     To read, use BDOS function 3.
+ *     To write, use BDOS function 4.
+ *     To check input status, use BDOS function 7.
+ */
+
+#define CPM_AIST 7 /* Auxilliary Input Status */
+
+int console_char_available(void) { return bdos(CPM_AIST, 0) != 0; }
+
+void write_console(char ch) { bdos(CPM_WPUN, ch); }
+
+int read_console(void) {
+    return bdos(CPM_RRDR, 0);
+}
+
+#else
+
+/*
+ * For CP/M2, we use the console.
+ */
+int console_char_available(void) { return bdos(CPM_ICON, 0) == 1; }
 
 void write_console(char ch) { bdos(CPM_DCIO, ch); }
 
 int read_console(void) { return bdos(CPM_DCIO, 0xff); }
+#endif
 
 /*
  * routines to make the io channel raw and restore it

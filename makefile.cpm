@@ -1,7 +1,11 @@
 # To compile using SDCC, add '-compiler=sdcc' to CC and remove -Werror from CFLAGS.
 
 CC=zcc +cpm
-CFLAGS=-O -Wall -Werror
+CFLAGS := -O -Wall -Werror
+
+ifdef CPM3
+CFLAGS  := $(CFLAGS) -DCPM3
+endif
 
 all:	zmrx.com zmtx.com
 
