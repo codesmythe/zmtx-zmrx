@@ -27,7 +27,7 @@
 #define INVHDR -2  /* invalid header received; but within timeout */
 #define INVDATA -3 /* invalid data subpacket received */
 #define ZDLEESC                                                                \
-    0x8000 /* one of ZCRCE; ZCRCG; ZCRCQ or ZCRCW was received; ZDLE           \
+    0x800 /* one of ZCRCE; ZCRCG; ZCRCQ or ZCRCW was received; ZDLE           \
             * escaped                                                          \
             */
 
