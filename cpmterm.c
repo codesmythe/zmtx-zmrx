@@ -87,11 +87,11 @@ void tx_raw(int c) {
 
 int rx_poll(void) { return console_char_available(); }
 
-static long delay_max = 0;
+static unsigned long delay_max = 0;
 
 int read_modem(unsigned char *buf, int count) {
     int n = 0;
-    long delay = 0;
+    unsigned long delay = 0;
 
     while (1) {
 
@@ -133,7 +133,7 @@ int inputbuffer_index;
 
 /* inline */
 int rx_raw(int timeout) {
-    static long delay_factor = 5000;
+    static unsigned long delay_factor = 20000;
     static int n_cans = 0;
 
     if (n_in_inputbuffer == 0) {
