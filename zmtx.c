@@ -178,7 +178,6 @@ int send_file(char *name)
 {
     long pos = 0;
     long size;
-    struct stat s;
     FILE *fp;
     char *p;
     unsigned char zfile_frame[] = {ZFILE, 0, 0, 0, 0};
@@ -395,10 +394,10 @@ int send_file(char *name)
      * and wait for zrinit. if it doesnt come then try again
      */
 
-    zeof_frame[ZP0] = s.st_size & 0xff;
-    zeof_frame[ZP1] = (s.st_size >> 8) & 0xff;
-    zeof_frame[ZP2] = (s.st_size >> 16) & 0xff;
-    zeof_frame[ZP3] = (s.st_size >> 24) & 0xff;
+    zeof_frame[ZP0] = current_file_size & 0xff;
+    zeof_frame[ZP1] = (current_file_size >> 8) & 0xff;
+    zeof_frame[ZP2] = (current_file_size >> 16) & 0xff;
+    zeof_frame[ZP3] = (current_file_size >> 24) & 0xff;
 
     do {
         tx_hex_header(zeof_frame);
