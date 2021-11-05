@@ -5,7 +5,7 @@
 #include <cpm.h>
 #include <stdio.h>
 
-long fileio_get_modification_time(const char *filename) { return -1L; }
+long fileio_get_modification_time(const char *filename) { return 0L; }
 
 void fileio_set_modification_time(const char *filename, long mdate) {}
 

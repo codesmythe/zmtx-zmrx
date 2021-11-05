@@ -230,14 +230,14 @@ void receive_file()
      * decide whether to transfer the file or skip it
      */
 
-    /* Returns -1 of the file does not exists; modification time otherwise */
+    /* Returns 0 of the file does not exists; modification time otherwise */
     long existing_file_modification_time = fileio_get_modification_time(name);
 
     /*
      * if the file already exists here the management options need to
      * be checked..
      */
-    if (existing_file_modification_time != -1) {
+    if (existing_file_modification_time != 0) {
         if (mdate == existing_file_modification_time) {
             /*
              * this is crash recovery

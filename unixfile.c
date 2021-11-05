@@ -8,7 +8,7 @@
 long fileio_get_modification_time(const char *filename) {
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL)
-        return -1;
+        return 0;
     struct stat s;
     fstat(fileno(fp), &s);
     return s.st_mtime;
