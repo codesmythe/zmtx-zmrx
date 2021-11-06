@@ -34,11 +34,22 @@ int read_console(void) {
 /*
  * For CP/M2, we use the console.
  */
-int console_char_available(void) { return bdos(CPM_ICON, 0) == 1; }
+// int console_char_available(void) { return bdos(CPM_ICON, 0) == 1; }
 
-void write_console(char ch) { bdos(CPM_DCIO, ch); }
+// void write_console(char ch) { bdos(CPM_DCIO, ch); }
 
-int read_console(void) { return bdos(CPM_DCIO, 0xff); }
+// int read_console(void) { return bdos(CPM_DCIO, 0xff); }
+
+#define CONST 2
+#define CONIN 3
+#define CONOUT 4
+
+int console_char_available(void) { return bios(CONST, 0, 0) != 0; }
+
+void write_console(char ch) { bios(CONOUT, ch, 0); }
+
+int read_console(void) { return bios(CONIN, 0, 0); }
+
 #endif
 
 /*
