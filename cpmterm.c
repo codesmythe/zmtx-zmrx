@@ -32,13 +32,8 @@ int read_console(void) {
 #else
 
 /*
- * For CP/M2, we use the console.
+ * For CP/M2, we use the console via BIOS (not BDOS) calls.
  */
-// int console_char_available(void) { return bdos(CPM_ICON, 0) == 1; }
-
-// void write_console(char ch) { bdos(CPM_DCIO, ch); }
-
-// int read_console(void) { return bdos(CPM_DCIO, 0xff); }
 
 #define CONST 2
 #define CONIN 3
