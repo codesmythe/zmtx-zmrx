@@ -1,0 +1,46 @@
+#
+# A GitHub Action to first build Z88DK from source, then 
+# build ZMTX-ZMRX.
+#
+# We need to build Z88DK from source because (1) it is
+# not in the Ubuntu package repositories and (2) it is 
+# available from z88dk.org only as a Snap, which is 
+# not well supported in a docker container.
+#
+
+name: build
+on: [ push, pull_request ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build ZMTX and ZMRX CP/M 2.2. binaries, cross compiled via Z88DK.
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Clone Z88DK repository
+        run: git clone --depth=1 --recursive  https://github.com/z88dk/z88dk.git
+      - name: Update Ubuntu package lists
+        run: sudo apt-get update
+      - name: Install additional dependencies
+        run: sudo apt-get install -y libxml2-dev
+      - name: Build Z88DK 
+        run: |
+          cd z88dk
+          chmod 777 build.sh
+          ./build.sh -C -p cpm
+          echo `pwd`/bin >> $GITHUB_PATH
+          echo "ZCCCFG=`pwd`/lib/config" >> $GITHUB_ENV
+      - name: Build ZMTX.COM and ZMRX.COM
+        run: |
+          make -f makefile.cpm
+      - uses: actions/upload-artifact@v2
+        with:
+            name: ZMTX binary
+            path: ${{ github.workspace }}/ZMTX.COM
+      - uses: actions/upload-artifact@v2
+        with:
+            name: ZMRX binary
+            path: ${{ github.workspace }}/ZMRX.COM
+
+
