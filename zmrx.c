@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "fileio.h"
-#include "opts.h"
 #include "zmdm.h"
 #include "zmodem.h"
 
@@ -30,7 +30,7 @@ long mdate;          /* file date of file being received */
 char filename[0x80]; /* filename of file being received */
 char *name; /* pointer to the part of the filename used in the actual open */
 
-char *line = NULL; /* device to use for io */
+char line[20]; /* device to use for io */
 int opt_v = FALSE; /* show progress output */
 int opt_d = FALSE; /* show debug output */
 int opt_q = FALSE;
@@ -356,7 +356,7 @@ void usage(void)
     printf("	-d          debug output\n");
     printf("	-v          verbose output\n");
     printf("	-q          quiet\n");
-    printf("	(only one of -n -c or -p may be specified)\n");
+    printf("	(only one of -n -o or -p may be specified)\n");
 
     cleanup();
 
@@ -367,29 +367,48 @@ int main(int argc, char **argv)
 
 {
     int i;
-    char *s;
     int type;
 
-    argv++;
-    while (--argc > 0 && ((*argv)[0] == '-')) {
-        for (s = argv[0] + 1; *s != '\0'; s++) {
-            switch (toupper(*s)) {
-                OPT_BOOL('D', opt_d)
-                OPT_BOOL('V', opt_v)
-                OPT_BOOL('Q', opt_q)
-
-                OPT_BOOL('N', management_newer)
-                OPT_BOOL('O', management_clobber)
-                OPT_BOOL('P', management_protect)
-                OPT_BOOL('J', junk_pathnames)
-                OPT_STRING('L', line)
-            default:
-                printf("zmrx: bad option %c\n", *s);
-                usage();
-            }
+    char ch;
+    int have_error = FALSE;
+    while ((ch = getopt(argc, argv, "DJL:NOPVQ")) != -1) {
+        switch (ch) {
+            case 'D':
+                opt_d = TRUE;
+                break;
+            case 'J':
+                junk_pathnames = TRUE;
+                break;
+            case 'L':
+                strncpy(line, optarg, 20);
+                line[19] = 0;
+                break;
+            case 'N':
+                management_newer = TRUE;
+                break;
+            case 'O':
+                management_clobber = TRUE;
+                break;
+            case 'P':
+                management_protect = TRUE;
+                break;
+            case 'Q':
+                opt_q = TRUE;
+                break;
+            case 'V':
+                opt_v = TRUE;
+                break;
+            case '?':
+                printf("zmtx: bad option '-%c'\n", optopt);
+                have_error = TRUE;
+                break;
         }
-        argv++;
     }
+
+    if (have_error) usage();
+
+    argc -= optind;
+    argv += optind;
 
     if (opt_d) {
         opt_v = TRUE;
@@ -407,12 +426,11 @@ int main(int argc, char **argv)
 	}
 #endif
 
-    if ((management_newer + management_clobber + management_protect) > 1 ||
-        argc != 0) {
+    if ((management_newer + management_clobber + management_protect) > 1 || argc != 0) {
         usage();
     }
 
-    if (line != NULL) {
+    if (line[0] != 0) {
         if (freopen(line, "r", stdin) == NULL) {
             fprintf(stderr, "zmrx can't open line for input %s\n", line);
             exit(2);

@@ -20,15 +20,15 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "opts.h"
 #include "zmdm.h"
 #include "zmodem.h"
 #include "fileio.h"
 
 #define MAX_SUBPACKETSIZE 1024
 
-char *line = NULL;                      /* device to use for io */
+char line[20];                      /* device to use for io */
 int opt_v = FALSE;                      /* show progress output */
 int opt_d = FALSE;                      /* show debug output */
 int subpacket_size = MAX_SUBPACKETSIZE; /* data subpacket size. may be modified
@@ -437,7 +437,7 @@ void usage(void)
     printf("\n");
     printf("	-d          debug output\n");
     printf("	-v          verbose output\n");
-    printf("	(only one of -n -c or -p may be specified)\n");
+    printf("	(only one of -n -o or -p may be specified)\n");
 
     cleanup();
 
@@ -448,37 +448,51 @@ int main(int argc, char **argv)
 
 {
     int i;
-    char *s;
-
-    argv++;
-    while (--argc > 0 && ((*argv)[0] == '-')) {
-        for (s = argv[0] + 1; *s != '\0'; s++) {
-            switch (toupper(*s)) {
-                OPT_BOOL('D', opt_d)
-                OPT_BOOL('V', opt_v)
-
-                OPT_BOOL('N', management_newer)
-                OPT_BOOL('O', management_clobber)
-                OPT_BOOL('P', management_protect)
-                OPT_STRING('L', line)
-            default:
-                printf("zmtx: bad option %c\n", *s);
-                usage();
-            }
+    int have_error = FALSE;
+    line[0] = 0;
+    char ch;
+    while ((ch = getopt(argc, argv, "DL:NOPV")) != -1) {
+        switch (ch) {
+            case 'D':
+                opt_d = TRUE;
+                break;
+            case 'L':
+                strncpy(line, optarg, 20);
+                line[19] = 0;
+                break;
+            case 'N':
+                management_newer = TRUE;
+                break;
+            case 'O':
+                management_clobber = TRUE;
+                break;
+            case 'P':
+                management_protect = TRUE;
+                break;
+            case 'V':
+                opt_v = TRUE;
+                break;
+            case '?':
+                printf("zmtx: bad option '-%c'\n", optopt);
+                have_error = TRUE;
+                break;
         }
-        argv++;
     }
+
+    if (have_error) usage();
+
+    argc -= optind;
+    argv += optind;
 
     if (opt_d) {
         opt_v = TRUE;
     }
 
-    if ((management_newer + management_clobber + management_protect) > 1 ||
-        argc == 0) {
+    if ((management_newer + management_clobber + management_protect) > 1 || argc == 0) {
         usage();
     }
 
-    if (line != NULL) {
+    if (line[0] != 0) {
         if (freopen(line, "r", stdin) == NULL) {
             fprintf(stderr, "zmtx can't open line for input %s\n", line);
             exit(2);

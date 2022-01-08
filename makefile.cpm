@@ -18,8 +18,8 @@ zmrx.com:	zmrx.o zmdm.o crctab.o cpmterm.o cpmfile.o
 # CP/M header dependencies are managed manually because I could not
 # quickly figure out how to make Z88DK handle it.
 
-zmrx.o: zmrx.c version.h fileio.h opts.h zmdm.h zmodem.h
-zmtx.o: zmtx.c version.h fileio.h opts.h zmdm.h zmodem.h
+zmrx.o: zmrx.c version.h fileio.h zmdm.h zmodem.h
+zmtx.o: zmtx.c version.h fileio.h zmdm.h zmodem.h
 zmdm.o: zmdm.c zmodem.h crctab.h zmdm.h
 crctab.o: crctab.c
 cpmterm.o: cpmterm.c zmodem.h zmdm.h
