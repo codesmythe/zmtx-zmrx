@@ -10,51 +10,44 @@
 
 extern int last_sent;
 
-#ifdef CPM3
+int use_aux = FALSE; /* Set by command line parser in main(). */
 
-/*
- * For CP/M 3, we'll use the AUX port.
- *     To read, use BDOS function 3.
- *     To write, use BDOS function 4.
- *     To check input status, use BDOS function 7.
- */
-
-#define CPM_AIST 7 /* Auxilliary Input Status */
-
-int console_char_available(void) { return bdos(CPM_AIST, 0) != 0; }
-
-void write_console(char ch) { bdos(CPM_WPUN, ch); }
-
-int read_console(void) {
-    return bdos(CPM_RRDR, 0);
-}
-
-#else
-
-/*
- * For CP/M2, we use the console via BIOS (not BDOS) calls.
- */
-
+/* BIOS functions for send/receive via the console device. */
 #define CONST 2
 #define CONIN 3
 #define CONOUT 4
 
-int console_char_available(void) { return bios(CONST, 0, 0) != 0; }
+/* BIOS functions for send/receive via the auxillary device. */
+#define AUXOUT  6
+#define AUXIN   7
+#define AUXIST 18
 
-void write_console(char ch) { bios(CONOUT, ch, 0); }
+/* Use the console by default. */
+int bios_char_avail = CONST;
+int bios_write_char = CONOUT;
+int bios_read_char  = CONIN;
 
-int read_console(void) { return bios(CONIN, 0, 0); }
+void setup_devices() {
+    bios_char_avail = use_aux ? AUXIST : CONST;
+    bios_write_char = use_aux ? AUXOUT : CONOUT;
+    bios_read_char  = use_aux ? AUXIN  : CONIN;
+}
 
-#endif
+int console_char_available(void) { return bios(bios_char_avail, 0, 0) != 0; }
+
+void write_console(char ch) { bios(bios_write_char, ch, 0); }
+
+int read_console(void) { return bios(bios_read_char, 0, 0); }
 
 /*
  * routines to make the io channel raw and restore it
  * to its normal state.
  *
- * No-ops on the Atari ST and CP/M.
  */
 
-void fd_init(void) {}
+void fd_init(void) {
+    setup_devices();
+}
 
 void fd_exit(void) {}
 

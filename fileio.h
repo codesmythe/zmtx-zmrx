@@ -10,6 +10,8 @@ long fileio_get_modification_time(const char *filename);
 void fileio_set_modification_time(const char *filename, long mdate);
 char *strip_path(char *path_in);
 
+int validate_device_choice(char choice);
+
 long get_file_size(FILE *fp);
 
 int get_matching_files(char *result, int argc, char **argv);

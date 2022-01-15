@@ -30,7 +30,7 @@ long mdate;          /* file date of file being received */
 char filename[0x80]; /* filename of file being received */
 char *name; /* pointer to the part of the filename used in the actual open */
 
-char line[20]; /* device to use for io */
+extern int use_aux;
 int opt_v = FALSE; /* show progress output */
 int opt_d = FALSE; /* show debug output */
 int opt_q = FALSE;
@@ -347,16 +347,17 @@ void usage(void)
 {
     printf("zmrx %s (C) Mattheij Computer Service 1994\n", VERSION);
     printf("usage : zmrx options\n");
-    printf("	-lline      line to use for io\n");
-    printf("	-j    		junk pathnames\n");
-    printf("	-n    		transfer if source is newer\n");
-    printf("	-o    	    overwrite if exists\n");
-    printf("	-p          protect (don't overwrite if exists)\n");
+    printf("    -x n        n=0: use console for transfers (default)\n");
+    printf("                n=1: use aux device for transfers\n");
+    printf("    -j          junk pathnames\n");
+    printf("    -n          transfer if source is newer\n");
+    printf("    -o          overwrite if exists\n");
+    printf("    -p          protect (don't overwrite if exists)\n");
     printf("\n");
-    printf("	-d          debug output\n");
-    printf("	-v          verbose output\n");
-    printf("	-q          quiet\n");
-    printf("	(only one of -n -o or -p may be specified)\n");
+    printf("    -d          debug output\n");
+    printf("    -v          verbose output\n");
+    printf("    -q          quiet\n");
+    printf("    (only one of -n -o or -p may be specified)\n");
 
     cleanup();
 
@@ -371,7 +372,8 @@ int main(int argc, char **argv)
 
     char ch;
     int have_error = FALSE;
-    while ((ch = getopt(argc, argv, "DJL:NOPVQ")) != -1) {
+    use_aux = FALSE;
+    while ((ch = getopt(argc, argv, "DJX:NOPVQ")) != -1) {
         switch (ch) {
             case 'D':
                 opt_d = TRUE;
@@ -379,9 +381,11 @@ int main(int argc, char **argv)
             case 'J':
                 junk_pathnames = TRUE;
                 break;
-            case 'L':
-                strncpy(line, optarg, 20);
-                line[19] = 0;
+            case 'X':
+                if (validate_device_choice(optarg[0])) {
+                    if (optarg[0] == '0') use_aux = FALSE;
+                    else if (optarg[0] == '1') use_aux = TRUE;
+                } else have_error = TRUE;
                 break;
             case 'N':
                 management_newer = TRUE;
@@ -428,17 +432,6 @@ int main(int argc, char **argv)
 
     if ((management_newer + management_clobber + management_protect) > 1 || argc != 0) {
         usage();
-    }
-
-    if (line[0] != 0) {
-        if (freopen(line, "r", stdin) == NULL) {
-            fprintf(stderr, "zmrx can't open line for input %s\n", line);
-            exit(2);
-        }
-        if (freopen(line, "w", stdout) == NULL) {
-            fprintf(stderr, "zmrx can't open line for output %s\n", line);
-            exit(2);
-        }
     }
 
     /*
