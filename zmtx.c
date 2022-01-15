@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -275,7 +274,9 @@ int send_file(char *name)
         n++;
     }
 
-    strcpy(p, n);
+    char *n2 = strip_path(n);
+
+    strcpy(p, n2);
 
     p += strlen(p) + 1;
 
@@ -342,10 +343,6 @@ int send_file(char *name)
         do {
             type = rx_header(10000);
         } while (type == ZACK);
-
-        if (opt_d) {
-            fprintf(stderr, "type : %d\n", type);
-        }
 
         if (type == ZSKIP) {
             fclose(fp);
@@ -447,6 +444,7 @@ void usage(void)
 int main(int argc, char **argv)
 
 {
+    char filenames[MAX_MATCHES * FILENAME_SIZE];
     int i;
     int have_error = FALSE;
     line[0] = 0;
@@ -517,15 +515,17 @@ int main(int argc, char **argv)
      * ZRINIT we are about to wipe has already died.
      */
 
-    rx_purge();
-
     /*
      * establish contact with the receiver
      */
 
+    int n_files_remaining = get_matching_files(filenames, argc, argv);
+
     if (opt_v) {
+        fprintf(stderr, "Found %d %s to send.\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");
         fprintf(stderr, "zmtx: establishing contact with receiver\n");
     }
+    rx_purge();
 
     i = 0;
     do {
@@ -581,19 +581,16 @@ int main(int argc, char **argv)
      * and send each file in turn
      */
 
-    n_files_remaining = argc;
-
-    while (argc) {
-        if (send_file(*argv)) {
+    char *filename = filenames;
+    while(n_files_remaining) {
+        if (send_file(filename)) {
             if (opt_v) {
                 fprintf(stderr, "zmtx: remote aborted.\n");
             }
             break;
         }
-
+        filename += FILENAME_SIZE;
         n_files_remaining--;
-        argc--;
-        argv++;
     }
 
     /*
