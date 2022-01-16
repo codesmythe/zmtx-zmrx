@@ -8,15 +8,54 @@ This is currently a work-in-progress.
 
 To build on UNIX with GCC, simply use make.
 
-For CP/M, you'll need to have [Z88DK](https://z88dk.org/site) available. Ensure that `zcc` is in your path. Then for CP/M 2.2 compatible binaries that send and receive via the console, do
+For CP/M, you'll need to have [Z88DK](https://z88dk.org/site) available. Ensure that `zcc` is in your path. Then to build, do:
 
     % make -f makefile.cpm
 
-For CP/M 3 compatible binaries that send and receive via the AUX port, do
+The binaries, ZMRX.COM and ZMTX.COM, will work on CP/M 2.2 and CP/M 3. 
 
-    % make CPM3=1 -f makefile.cpm
+## USAGE
 
-The binaries produced are ZMRX.COM and ZMTX.COM. Both binaries are ported but not tested. 
+### Receiving to CP/M: ZMRX.COM
+
+To receive files to CP/M from a PC, use ZMRX.COM. It does not take any file parameters, but accepts these command line options:
+
+| Option | Description                                                  |
+| ------ | ------------------------------------------------------------ |
+| -x n   | When n=0, use the console for transfers (default).<br />When n=1, use the AUX device for transfers (not supported for CP/M 2.2) |
+| -j     | Junk pathnames.                                              |
+| -n     | Transfer only if source is newer (not currently implemented for CP/M). |
+| -o     | Overwrite if file exists.                                    |
+| -p     | Protect (don't overwrite if file exists).                    |
+| -d     | Enable debug output                                          |
+| -v     | Enable verbose output                                        |
+| -q     | Quiet; don't print anything.                                 |
+
+ Only one of -n, -o or -p may be specified.
+
+### Transmitting from CP/M: ZMTX.COM
+
+To transmit files from CP/M from a PC, use ZMTX.COM. This program requires at least one file name or wildcard patterns. More than one file name or wildcard expansion can be given on the command, but the maximum number of files that can be transferred in one invocation is 512 files.
+
+For example:
+
+    B>zmtx A:*.COM B:ZP*.* S*.* 
+
+will transmit files on the A drive that match \*.COM, files on B: that match ZP\*.\*, and files on the current drive that match S\*.\* . File names can be lower or upper case.
+
+ZMTX.COM accepts these command line options:
+
+| Option | Description                                                  |
+| ------ | ------------------------------------------------------------ |
+| -x n   | When n=0, use the console for transfers (default).<br />When n=1, use the AUX device for transfers (not supported for CP/M 2.2) |
+| -n     | Transfer only if source is newer (not currently implemented for CP/M). |
+| -o     | Overwrite if file exists.                                    |
+| -p     | Protect (don't overwrite if file exists).                    |
+| -d     | Enable debug output                                          |
+| -v     | Enable verbose output                                        |
+| -q     | Quiet; don't print anything.                                 |
+
+As with ZMRX.COM,  only one of -n, -o or -p may be specified.
 
 ## MOTIVATION AND HISTORY
 
