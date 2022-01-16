@@ -426,7 +426,8 @@ void cleanup(void)
 void usage(void)
 
 {
-    printf("zmtx %s (C) Mattheij Computer Service 1994\n", VERSION);
+    printf("zmtx %s %s (C) Mattheij Computer Service 1994\n", VERSION, VERSION_DATE);
+    printf("    CP/M port by Rob Gowin with help from Andrew Lynch.\n");
     printf("usage : zmtx options files\n");
     printf("    -x n        n=0: use console for transfers (default)\n");
     printf("                n=1: use aux device for transfers\n");
