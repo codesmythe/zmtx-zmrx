@@ -1,6 +1,6 @@
 ## ZMRX/ZMTX
 
-This repository is a modernization of a mid 1990's implementation of the ZMODEM protocol called 'zmtx-zmrx'. The main goal is to have a version of ZMODEM that will run standalone on the Atari ST, CP/M 2.2, and CP/M 3.
+This repository is a modernization of a mid 1990's implementation of the ZMODEM protocol called 'zmtx-zmrx'. The main goal is to have a version of ZMODEM that will run standalone on CP/M 2.2 and CP/M 3.
 
 This is currently a work-in-progress.
 
