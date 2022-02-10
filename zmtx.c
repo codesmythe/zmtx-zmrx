@@ -27,6 +27,8 @@
 
 #define MAX_SUBPACKETSIZE 1024
 
+#pragma printf = "%c %s %d %ld"         // enables %c, %s, %d, %ld only
+
 extern int use_aux;
 
 int opt_v = FALSE;                      /* show progress output */
@@ -37,7 +39,6 @@ int n_files_remaining;
 unsigned char tx_data_subpacket[1024];
 
 long current_file_size;
-time_t transfer_start;
 
 /*
  * show the progress of the transfer like this:
@@ -47,8 +48,6 @@ time_t transfer_start;
 void show_progress(char *name, FILE *fp)
 
 {
-    time_t duration;
-    long cps;
     long percentage;
 
     if (current_file_size > 0) {
@@ -57,18 +56,10 @@ void show_progress(char *name, FILE *fp)
         percentage = 100;
     }
 
-    duration = time(NULL) - transfer_start;
-
-    if (duration == 0l) {
-        duration = 1l;
-    }
-
-    cps = (long)ftell(fp) / duration;
-
     fprintf(
         stderr,
-        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%/%5ld cps)           \r",
-        name, ftell(fp), percentage, cps);
+        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%)           \r",
+        name, ftell(fp), percentage);
 }
 
 /*
@@ -293,7 +284,7 @@ int send_file(char *name)
      * modification date
      */
 
-    sprintf(p, "%lo ", fileio_get_modification_time(name));
+    sprintf(p, "%ld ", fileio_get_modification_time(name));
 
     p += strlen(p);
 
@@ -356,8 +347,6 @@ int send_file(char *name)
         }
 
     } while (type != ZRPOS);
-
-    transfer_start = time(NULL);
 
     do {
         /*
