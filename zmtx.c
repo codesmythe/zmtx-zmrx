@@ -27,7 +27,7 @@
 
 #define MAX_SUBPACKETSIZE 1024
 
-#pragma printf = "%c %s %d %ld"         // enables %c, %s, %d, %ld only
+#pragma printf = "%c %s %d %8ld"        // enables %c, %s, %d, %ld only
 
 extern int use_aux;
 
@@ -39,6 +39,7 @@ int n_files_remaining;
 unsigned char tx_data_subpacket[1024];
 
 long current_file_size;
+time_t transfer_start;
 
 /*
  * show the progress of the transfer like this:
@@ -48,6 +49,8 @@ long current_file_size;
 void show_progress(char *name, FILE *fp)
 
 {
+    time_t duration;
+    long cps;
     long percentage;
 
     if (current_file_size > 0) {
@@ -56,10 +59,18 @@ void show_progress(char *name, FILE *fp)
         percentage = 100;
     }
 
+    duration = time(NULL) - transfer_start;
+
+    if (duration == 0l) {
+        duration = 1l;
+    }
+
+    cps = (long)ftell(fp) / duration;
+
     fprintf(
         stderr,
-        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%)           \r",
-        name, ftell(fp), percentage);
+        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
+        name, ftell(fp), percentage, cps);
 }
 
 /*
@@ -347,6 +358,8 @@ int send_file(char *name)
         }
 
     } while (type != ZRPOS);
+
+    transfer_start = time(NULL);
 
     do {
         /*

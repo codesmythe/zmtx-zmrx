@@ -25,7 +25,7 @@
 #include "zmdm.h"
 #include "zmodem.h"
 
-#pragma printf = "%c %s %d %ld"  // enables %c, %s, %d, %ld only
+#pragma printf = "%c %s %d %8ld"        // enables %c, %s, %d, %ld only
 
 FILE *fp = NULL;     /* fp of file being received or NULL */
 long mdate;          /* file date of file being received */
@@ -40,6 +40,7 @@ int junk_pathnames = FALSE; /* junk incoming path names or keep them */
 unsigned char rx_data_subpacket[8192]; /* zzap = 8192 */
 
 long current_file_size;
+time_t transfer_start;
 
 /*
  * show the progress of the transfer like this:
@@ -52,15 +53,26 @@ void show_progress(char *progress_fname, FILE *progress_fp)
 {
     long percentage;
 
+    time_t duration;
+    long cps;
+
     if (current_file_size > 0) {
         percentage = ((long)ftell(progress_fp) * 100) / current_file_size;
     } else {
         percentage = 100;
     }
 
+    duration = time(NULL) - transfer_start;
+
+    if (duration == 0l) {
+        duration = 1;
+    }
+
+    cps = (long)ftell(progress_fp) / duration;
+
     fprintf(stderr,
-            "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%)           \r",
-            progress_fname, ftell(progress_fp), percentage);
+            "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
+            progress_fname, ftell(progress_fp), percentage, cps);
 }
 
 /*
@@ -250,7 +262,7 @@ void receive_file()
                 if (newer) {
                     if (mdate < existing_file_modification_time) {
                         fprintf(stderr,
-                                "zmrx: file '%s' skipped becaused local file "
+                                "zmrx: file '%s' skipped because local file "
                                 "is newer.\n",
                                 name);
                         tx_pos_header(ZSKIP, 0L);
@@ -279,6 +291,8 @@ void receive_file()
         }
         return;
     }
+
+    transfer_start = time(NULL);
 
     while (ftell(fp) != size) {
         type = receive_file_data(filename, fp);

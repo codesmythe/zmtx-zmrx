@@ -22,6 +22,6 @@ cpmterm.o: cpmterm.c zmodem.h zmdm.h
 cpmfile.o: cpmfile.c fileio.h
 
 clean:
-	rm -f *.o *.lis *.map zmtx zmrx zmtx.com zmrx.com
+	rm -f *.o *.lis *.map zmtx zmrx ZMTX.COM ZMRX.COM
 
 

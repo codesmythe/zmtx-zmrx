@@ -23,5 +23,3 @@ cpmfile.o: cpmfile.c fileio.h
 
 clean:
 	rm -f *.o *.lis *.map zmtx zmrx ZMTX.COM ZMRX.COM
-
-
