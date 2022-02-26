@@ -27,6 +27,8 @@
 
 #define MAX_SUBPACKETSIZE 1024
 
+#pragma printf = "%c %s %d %8ld"        // enables %c, %s, %d, %ld only
+
 extern int use_aux;
 
 int opt_v = FALSE;                      /* show progress output */
@@ -67,7 +69,7 @@ void show_progress(char *name, FILE *fp)
 
     fprintf(
         stderr,
-        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%/%5ld cps)           \r",
+        "zmtx: sending file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
         name, ftell(fp), percentage, cps);
 }
 
@@ -293,7 +295,7 @@ int send_file(char *name)
      * modification date
      */
 
-    sprintf(p, "%lo ", fileio_get_modification_time(name));
+    sprintf(p, "%ld ", fileio_get_modification_time(name));
 
     p += strlen(p);
 

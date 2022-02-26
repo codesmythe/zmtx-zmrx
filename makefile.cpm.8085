@@ -1,7 +1,7 @@
 # To compile using SDCC, add '-compiler=sdcc' to CC and remove -Werror from CFLAGS.
 
 CC=zcc +cpm
-CFLAGS := -O2 --list -Wall -Werror
+CFLAGS := -clib=8085 -O2 --list -D__CLASSIC -D__8085__ -Wall -Werror
 
 all:	zmrx.com zmtx.com
 
@@ -23,5 +23,3 @@ cpmfile.o: cpmfile.c fileio.h
 
 clean:
 	rm -f *.o *.lis *.map zmtx zmrx ZMTX.COM ZMRX.COM
-
-
