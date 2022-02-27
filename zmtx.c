@@ -27,7 +27,9 @@
 
 #define MAX_SUBPACKETSIZE 1024
 
+#ifdef __Z88DK
 #pragma printf = "%c %s %d %8ld"        // enables %c, %s, %d, %ld only
+#endif
 
 extern int use_aux;
 

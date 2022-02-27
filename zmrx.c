@@ -25,7 +25,9 @@
 #include "zmdm.h"
 #include "zmodem.h"
 
+#ifdef __Z88DK
 #pragma printf = "%c %s %d %8ld"        // enables %c, %s, %d, %ld only
+#endif
 
 FILE *fp = NULL;     /* fp of file being received or NULL */
 long mdate;          /* file date of file being received */
