@@ -5,7 +5,10 @@
 
 #include "fileio.h"
 
-long fileio_get_modification_time(const char *filename) {
+int use_aux = 0;
+
+long fileio_get_modification_time(const char *filename)
+{
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL)
         return 0;
@@ -14,7 +17,8 @@ long fileio_get_modification_time(const char *filename) {
     return s.st_mtime;
 }
 
-void fileio_set_modification_time(const char *filename, long mdate) {
+void fileio_set_modification_time(const char *filename, long mdate)
+{
     /*
      * set the time
      */
@@ -30,3 +34,21 @@ long get_file_size(FILE *fp) {
     fstat(fileno(fp), &s);
     return s.st_size;
 }
+
+char *strip_path(char *path_in)
+{
+    // Nothing in particular to do for unix.
+    return path_in;
+}
+
+int validate_device_choice(char choice)
+{
+    // All choices are valid at this point.
+    return 1;
+}
+
+int get_matching_files(char *result, int argc, char **argv)
+{
+    return 0;
+}
+
