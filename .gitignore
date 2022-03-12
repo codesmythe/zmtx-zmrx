@@ -1,0 +1,8 @@
+*~
+.deps
+.idea
+ZMRX.COM
+ZMTX.COM
+*.o
+cmake-build-debug/
+build/
