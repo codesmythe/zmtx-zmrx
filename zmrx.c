@@ -125,13 +125,12 @@ int receive_file_data(char *receive_fname, FILE *receive_fp)
         long pos3 = ((long) rxd_header[ZP3]) << 24;
 
         pos = pos0 | pos1 | pos2 | pos3;
+        if (opt_d) fprintf(stderr, "After ZDATA, pos = %ld, ftell = %ld\r\n", pos, ftell(receive_fp));
     } while (pos != ftell(receive_fp));
 
     do {
         type = rx_data(rx_data_subpacket, &n);
-
-        /*		fprintf(stderr,"packet len %d type %d\n",n,type);
-         */
+        if (opt_d) fprintf(stderr,"packet len %d type %d\r\n",n,type);
         if (type == ENDOFFRAME || type == FRAMEOK) {
             fwrite(rx_data_subpacket, 1, n, receive_fp);
         }
@@ -352,22 +351,23 @@ void cleanup(void)
 void usage(void)
 
 {
-    printf("zmrx %s %s (C) Mattheij Computer Service 1994\n", VERSION, VERSION_DATE);
-    printf("    CP/M port by Rob Gowin with help from Andrew Lynch.");
-    printf("usage : zmrx options\n");
+    printf("zmrx %s %s (C) Mattheij Computer Service 1994\r\n", VERSION, VERSION_DATE);
+    printf("    CP/M port by Rob Gowin with help from Andrew Lynch.\r\n");
+    printf("    TOS port by Rob Gowin.\r\n");
+    printf("usage: zmrx [options]\r\n");
 #ifdef __CPM__
     printf("    -x n        n=0: use console for transfers (default)\n");
     printf("                n=1: use aux device for transfers\n");
 #endif
-    printf("    -j          junk pathnames\n");
-    printf("    -n          transfer if source is newer\n");
-    printf("    -o          overwrite if exists\n");
-    printf("    -p          protect (don't overwrite if exists)\n");
-    printf("\n");
-    printf("    -d          debug output\n");
-    printf("    -v          verbose output\n");
-    printf("    -q          quiet\n");
-    printf("    (only one of -n -o or -p may be specified)\n");
+    printf("    -j          junk pathnames\r\n");
+    printf("    -n          transfer if source is newer\r\n");
+    printf("    -o          overwrite if exists\r\n");
+    printf("    -p          protect (don't overwrite if exists)\r\n");
+    printf("\r\n");
+    printf("    -d          debug output\r\n");
+    printf("    -v          verbose output\r\n");
+    printf("    -q          quiet\r\n");
+    printf("    (only one of -n -o or -p may be specified)\r\n");
 
     cleanup();
 
@@ -375,13 +375,17 @@ void usage(void)
 }
 
 int main(int argc, char **argv)
-
 {
     int i;
-    int type;
+    enum ZFrameType type;
 
     int ch;
     int have_error = FALSE;
+
+#if  __atarist__
+    argv[0] = "zmrx";
+#endif
+
 #ifdef __CPM__
     use_aux = FALSE;
     const char *optstring = "DJX:NOPVQ";
@@ -429,10 +433,10 @@ int main(int argc, char **argv)
                 break;
             case '?':
             default:
-                printf("zmtx: bad option '-%c'\n", optopt);
                 have_error = TRUE;
                 break;
         }
+        if (have_error) break;
     }
 
     if (have_error) usage();
