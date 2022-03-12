@@ -14,9 +14,7 @@
 /******************************************************************************/
 
 #include "version.h"
-#if __atarist__
 #include <getopt.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -225,7 +223,7 @@ void receive_file()
     }
 
     if (opt_v) {
-        fprintf(stderr, "zmrx: receiving file \"%s\"\r", name);
+        fprintf(stderr, "zmrx: receiving file \"%s\"\r\n", name);
     }
 
     sscanf((char *)(rx_data_subpacket +
@@ -269,8 +267,7 @@ void receive_file()
                 if (newer) {
                     if (mdate < existing_file_modification_time) {
                         fprintf(stderr,
-                                "zmrx: file '%s' skipped because local file "
-                                "is newer.\n",
+                                "zmrx: file '%s' skipped because local file is newer.\r\n",
                                 name);
                         tx_pos_header(ZSKIP, 0L);
                         /*
@@ -294,7 +291,7 @@ void receive_file()
     if (fp == NULL) {
         tx_pos_header(ZSKIP, 0L);
         if (opt_v) {
-            fprintf(stderr, "zmrx: can't open file '%s'\n", name);
+            fprintf(stderr, "zmrx: can't open file '%s' for writing\r\n", name);
         }
         return;
     }
@@ -472,7 +469,7 @@ int main(int argc, char **argv)
      */
 
     if (opt_v) {
-        fprintf(stderr, "zmrx: establishing contact with sender\n");
+        fprintf(stderr, "zmrx: establishing contact with sender\r\n");
     }
 
     /*
@@ -490,7 +487,7 @@ int main(int argc, char **argv)
     do {
         i++;
         if (i > 10) {
-            fprintf(stderr, "zmrx: can't establish contact with sender\n");
+            fprintf(stderr, "zmrx: can't establish contact with sender\r\n");
             cleanup();
             exit(3);
         }
@@ -500,8 +497,8 @@ int main(int argc, char **argv)
     } while (type == TIMEOUT || type == ZRQINIT);
 
     if (opt_v) {
-        fprintf(stderr, "zmrx: contact established\n");
-        fprintf(stderr, "zmrx: starting file transfer\n");
+        fprintf(stderr, "zmrx: contact established\r\n");
+        fprintf(stderr, "zmrx: starting file transfer\r\n");
     }
 
     /*
@@ -527,7 +524,7 @@ int main(int argc, char **argv)
      */
 
     if (opt_v) {
-        fprintf(stderr, "zmrx: closing the session\n");
+        fprintf(stderr, "zmrx: closing the session\r\n");
     }
 
     {
@@ -554,7 +551,7 @@ int main(int argc, char **argv)
     }
 
     if (opt_d) {
-        fprintf(stderr, "zmrx: cleanup and exit\n");
+        fprintf(stderr, "zmrx: cleanup and exit\r\n");
     }
 
     cleanup();

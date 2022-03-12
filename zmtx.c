@@ -14,9 +14,7 @@
 /******************************************************************************/
 
 #include "version.h"
-#if __atarist__
 #include <getopt.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -144,7 +142,7 @@ int send_from(char *name, FILE *fp)
 
             if (ftell(fp) == current_file_size) {
                 if (opt_d) {
-                    fprintf(stderr, "end of file\n");
+                    fprintf(stderr, "end of file\r\n");
                 }
                 return ZACK;
             }
@@ -194,7 +192,7 @@ int send_file(char *name)
     char *n;
 
     if (opt_v) {
-        fprintf(stderr, "zmtx: sending file \"%s\"\r", name);
+        fprintf(stderr, "zmtx: sending file \"%s\"\r\n", name);
     }
 
     /*
@@ -205,7 +203,7 @@ int send_file(char *name)
 
     if (fp == NULL) {
         if (opt_v) {
-            fprintf(stderr, "zmtx: can't open file %s\n", name);
+            fprintf(stderr, "zmtx: can't open file %s\r\n", name);
         }
         return TRUE;
     }
@@ -230,21 +228,21 @@ int send_file(char *name)
     if (management_protect) {
         zfile_frame[ZF1] = ZF1_ZMPROT;
         if (opt_d) {
-            fprintf(stderr, "zmtx: protecting destination\n");
+            fprintf(stderr, "zmtx: protecting destination\r\n");
         }
     }
 
     if (management_clobber) {
         zfile_frame[ZF1] = ZF1_ZMCLOB;
         if (opt_d) {
-            fprintf(stderr, "zmtx: overwriting destination\n");
+            fprintf(stderr, "zmtx: overwriting destination\r\n");
         }
     }
 
     if (management_newer) {
         zfile_frame[ZF1] = ZF1_ZMNEW;
         if (opt_d) {
-            fprintf(stderr, "zmtx: overwriting destination if newer\n");
+            fprintf(stderr, "zmtx: overwriting destination if newer\r\n");
         }
     }
 
@@ -357,7 +355,7 @@ int send_file(char *name)
             fclose(fp);
             if (opt_v) {
                 fprintf(stderr,
-                        "zmtx: skipped file \"%s\"                       \n",
+                        "zmtx: skipped file \"%s\"                       \r\n",
                         name);
             }
             return FALSE;
@@ -416,7 +414,7 @@ int send_file(char *name)
 
     if (opt_v) {
         fprintf(stderr,
-                "zmtx: sent file \"%s\"                                    \n",
+                "zmtx: sent file \"%s\"                                    \r\n",
                 name);
     }
 
@@ -537,8 +535,8 @@ int main(int argc, char **argv)
     n_files_remaining = get_matching_files(filenames, argc, argv);
 
     if (opt_v) {
-        fprintf(stderr, "Found %d %s to send.\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");
-        fprintf(stderr, "zmtx: establishing contact with receiver\n");
+        fprintf(stderr, "Found %d %s to send.\r\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");
+        fprintf(stderr, "zmtx: establishing contact with receiver\r\n");
     }
     rx_purge();
 
@@ -547,7 +545,7 @@ int main(int argc, char **argv)
         unsigned char zrqinit_header[] = {ZRQINIT, 0, 0, 0, 0};
         i++;
         if (i > 10) {
-            fprintf(stderr, "zmtx: can't establish contact with receiver\n");
+            fprintf(stderr, "zmtx: can't establish contact with receiver\r\n");
             cleanup();
             exit(3);
         }
@@ -559,8 +557,8 @@ int main(int argc, char **argv)
     } while (rx_header(7000) != ZRINIT);
 
     if (opt_v) {
-        fprintf(stderr, "zmtx: contact established\n");
-        fprintf(stderr, "zmtx: starting file transfer\n");
+        fprintf(stderr, "zmtx: contact established\r\n");
+        fprintf(stderr, "zmtx: starting file transfer\r\n");
     }
 
     /*
@@ -578,17 +576,17 @@ int main(int argc, char **argv)
     use_variable_headers = (rxd_header[ZF1] & ZF1_CANVHDR) != 0;
 
     if (opt_d) {
-        fprintf(stderr, "receiver %s full duplex\n",
+        fprintf(stderr, "receiver %s full duplex\r\n",
                 can_full_duplex ? "can" : "can't");
-        fprintf(stderr, "receiver %s overlap io\n",
+        fprintf(stderr, "receiver %s overlap io\r\n",
                 can_overlap_io ? "can" : "can't");
-        fprintf(stderr, "receiver %s break\n", can_break ? "can" : "can't");
-        fprintf(stderr, "receiver %s fcs 32\n", can_fcs_32 ? "can" : "can't");
-        fprintf(stderr, "receiver %s escaped control chars\n",
+        fprintf(stderr, "receiver %s break\r\n", can_break ? "can" : "can't");
+        fprintf(stderr, "receiver %s fcs 32\r\n", can_fcs_32 ? "can" : "can't");
+        fprintf(stderr, "receiver %s escaped control chars\r\n",
                 escape_all_control_characters ? "requests" : "doesn't request");
-        fprintf(stderr, "receiver %s escaped 8th bit\n",
+        fprintf(stderr, "receiver %s escaped 8th bit\r\n",
                 escape_8th_bit ? "requests" : "doesn't request");
-        fprintf(stderr, "receiver %s use variable headers\n",
+        fprintf(stderr, "receiver %s use variable headers\r\n",
                 use_variable_headers ? "can" : "can't");
     }
 
@@ -600,7 +598,7 @@ int main(int argc, char **argv)
     while(n_files_remaining) {
         if (send_file(filename)) {
             if (opt_v) {
-                fprintf(stderr, "zmtx: remote aborted.\n");
+                fprintf(stderr, "zmtx: remote aborted.\r\n");
             }
             break;
         }
@@ -613,7 +611,7 @@ int main(int argc, char **argv)
      */
 
     if (opt_v) {
-        fprintf(stderr, "zmtx: closing the session\n");
+        fprintf(stderr, "zmtx: closing the session\r\n");
     }
 
     {
@@ -642,7 +640,7 @@ int main(int argc, char **argv)
      */
 
     if (opt_d) {
-        fprintf(stderr, "zmtx: cleanup and exit\n");
+        fprintf(stderr, "zmtx: cleanup and exit\r\n");
     }
 
     cleanup();
