@@ -14,7 +14,6 @@
 /******************************************************************************/
 
 #include "version.h"
-#include <ctype.h>
 #if __atarist__
 #include <getopt.h>
 #endif
@@ -34,7 +33,9 @@
 #pragma printf = "%c %s %d %8ld"        // enables %c, %s, %d, %ld only
 #endif
 
+#ifdef __CPM__
 extern int use_aux;
+#endif
 
 int opt_v = FALSE;                      /* show progress output */
 int opt_d = FALSE;                      /* show debug output */
@@ -457,32 +458,45 @@ int main(int argc, char **argv)
     char filenames[MAX_MATCHES * FILENAME_SIZE];
     int i;
     int have_error = FALSE;
-    char ch;
+    int ch;
+#ifdef __CPM__
     use_aux = FALSE;
-    while ((ch = getopt(argc, argv, "DX:NOPV")) != -1) {
+    const char *optstring = "DX:NOPV";
+#else
+    const char *optstring = "dnopv";
+#endif
+    while ((ch = getopt(argc, argv, optstring)) != -1) {
         switch (ch) {
             case 'D':
+            case 'd':
                 opt_d = TRUE;
                 break;
+#ifdef __CPM__
             case 'X':
                 if (validate_device_choice(optarg[0])) {
                     if (optarg[0] == '0') use_aux = FALSE;
                     else if (optarg[0] == '1') use_aux = TRUE;
                 } else have_error = TRUE;
                 break;
+#endif
             case 'N':
+            case 'n':
                 management_newer = TRUE;
                 break;
             case 'O':
+            case 'o':
                 management_clobber = TRUE;
                 break;
             case 'P':
+            case 'p':
                 management_protect = TRUE;
                 break;
             case 'V':
+            case 'v':
                 opt_v = TRUE;
                 break;
             case '?':
+            default:
                 printf("zmtx: bad option '-%c'\n", optopt);
                 have_error = TRUE;
                 break;
@@ -520,7 +534,7 @@ int main(int argc, char **argv)
      * establish contact with the receiver
      */
 
-    int n_files_remaining = get_matching_files(filenames, argc, argv);
+    n_files_remaining = get_matching_files(filenames, argc, argv);
 
     if (opt_v) {
         fprintf(stderr, "Found %d %s to send.\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");

@@ -14,7 +14,6 @@
 /******************************************************************************/
 
 #include "version.h"
-#include <ctype.h>
 #if __atarist__
 #include <getopt.h>
 #endif
@@ -37,7 +36,10 @@ long mdate;          /* file date of file being received */
 char filename[0x80]; /* filename of file being received */
 char *name; /* pointer to the part of the filename used in the actual open */
 
+#ifdef __CPM__
 extern int use_aux;
+#endif
+
 int opt_v = FALSE; /* show progress output */
 int opt_d = FALSE; /* show debug output */
 int opt_q = FALSE;
@@ -354,8 +356,10 @@ void usage(void)
     printf("zmrx %s %s (C) Mattheij Computer Service 1994\n", VERSION, VERSION_DATE);
     printf("    CP/M port by Rob Gowin with help from Andrew Lynch.");
     printf("usage : zmrx options\n");
+#ifdef __CPM__
     printf("    -x n        n=0: use console for transfers (default)\n");
     printf("                n=1: use aux device for transfers\n");
+#endif
     printf("    -j          junk pathnames\n");
     printf("    -n          transfer if source is newer\n");
     printf("    -o          overwrite if exists\n");
@@ -377,39 +381,55 @@ int main(int argc, char **argv)
     int i;
     int type;
 
-    char ch;
+    int ch;
     int have_error = FALSE;
+#ifdef __CPM__
     use_aux = FALSE;
-    while ((ch = getopt(argc, argv, "DJX:NOPVQ")) != -1) {
+    const char *optstring = "DJX:NOPVQ";
+#else
+    const char *optstring = "djnopvq";
+#endif
+
+    while ((ch = getopt(argc, argv, optstring)) != -1) {
         switch (ch) {
             case 'D':
+            case 'd':
                 opt_d = TRUE;
                 break;
             case 'J':
+            case 'j':
                 junk_pathnames = TRUE;
                 break;
+#ifdef __CPM__
             case 'X':
                 if (validate_device_choice(optarg[0])) {
                     if (optarg[0] == '0') use_aux = FALSE;
                     else if (optarg[0] == '1') use_aux = TRUE;
                 } else have_error = TRUE;
                 break;
+#endif
             case 'N':
+            case 'n':
                 management_newer = TRUE;
                 break;
             case 'O':
+            case 'o':
                 management_clobber = TRUE;
                 break;
             case 'P':
+            case 'p':
                 management_protect = TRUE;
                 break;
             case 'Q':
+            case 'q':
                 opt_q = TRUE;
                 break;
             case 'V':
+            case 'v':
                 opt_v = TRUE;
                 break;
             case '?':
+            default:
                 printf("zmtx: bad option '-%c'\n", optopt);
                 have_error = TRUE;
                 break;
