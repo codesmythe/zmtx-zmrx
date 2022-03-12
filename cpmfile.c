@@ -145,13 +145,13 @@ static struct fcb *init_fcb(char *dirbuf, char *dirpos, char *pattern, int quiet
         return NULL;
     }
     // Tell CP/M where the directory buffer should be.
-    bdos(CPM_SDMA, dirbuf);
+    bdos(CPM_SDMA, (int)dirbuf);
     // Zero out the FCB.
     memset(the_fcb, 0, sizeof(struct fcb));
     // Set the base and extention parts of the FCB based on the incoming pattern.
     setfcb(the_fcb, (unsigned char *) pattern);
     // Ask CP/M for the first entry.
-    *dirpos = bdos(CPM_FFST, the_fcb);
+    *dirpos = bdos(CPM_FFST, (int) the_fcb);
     // If we get -1, there are no matches for the pattern.
     if (*dirpos == -1) {
         if (!quiet) fprintf(stderr, "Note: pattern \"%s\" did not match any files.\n", pattern);
@@ -183,7 +183,7 @@ int get_matching_files_for_pattern(char *result, char *pattern, int max_matches)
         strncpy(result, filename, FILENAME_SIZE);
         result += FILENAME_SIZE;
         match_count++;
-        dirpos = bdos(CPM_FNXT, the_fcb);
+        dirpos = bdos(CPM_FNXT, (int) the_fcb);
     }
     return match_count;
 }
