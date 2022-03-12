@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "zmodem.h"
 #define ZMDM
@@ -35,6 +36,8 @@ long ack_file_pos; /* file position used in acknowledgement of correctly */
                    /* received data subpackets */
 
 int last_sent = -1;
+
+extern int opt_d; /* print debug messages */
 
 /*
  * transmit a character ZDLE escaped
@@ -362,7 +365,7 @@ void tx_data(int sub_frame_type, unsigned char *p, int l)
     tx_flush();
 }
 
-void tx_pos_header(int type, long pos)
+void tx_pos_header(enum ZFrameType type, long pos)
 
 {
     unsigned char header[5];
@@ -526,7 +529,7 @@ int rx_32_data(unsigned char *p, int *l)
     crc = 0xffffffffl;
 
     do {
-        c = rx(1000);
+        c = rx(SMALL_TIMEOUT);
 
         if (c == TIMEOUT) {
             return TIMEOUT;
@@ -545,10 +548,10 @@ int rx_32_data(unsigned char *p, int *l)
 
     crc = ~crc;
 
-    rxd_crc = (long)rx(1000);
-    rxd_crc |= (long)rx(1000) << 8;
-    rxd_crc |= (long)rx(1000) << 16;
-    rxd_crc |= (long)rx(1000) << 24;
+    rxd_crc = (long)rx(SMALL_TIMEOUT);
+    rxd_crc |= (long)rx(SMALL_TIMEOUT) << 8;
+    rxd_crc |= (long)rx(SMALL_TIMEOUT) << 16;
+    rxd_crc |= (long)rx(SMALL_TIMEOUT) << 24;
 
     if (rxd_crc != crc) {
         return FALSE;
@@ -593,8 +596,8 @@ int rx_16_data(register unsigned char *p, int *l)
     crc = UPDCRC16(0, crc);
     crc = UPDCRC16(0, crc);
 
-    rxd_crc = (short)rx(1000) << 8;
-    rxd_crc |= (short)rx(1000);
+    rxd_crc = (short)rx(SMALL_TIMEOUT) << 8;
+    rxd_crc |= (short)rx(SMALL_TIMEOUT);
 
     if (rxd_crc != crc) {
         return FALSE;
@@ -754,8 +757,8 @@ void rx_bin16_header(int timeout)
     crc = UPDCRC16(0, crc);
     crc = UPDCRC16(0, crc);
 
-    rxd_crc = rx(1000) << 8;
-    rxd_crc |= rx(1000);
+    rxd_crc = rx(SMALL_TIMEOUT) << 8;
+    rxd_crc |= rx(SMALL_TIMEOUT);
 
     if (rxd_crc != crc) {
 #ifdef DEBUG
@@ -841,14 +844,12 @@ void rx_bin32_header(int to)
     unsigned long crc;
     unsigned long rxd_crc;
 
-#ifdef DEBUG
-    fprintf(stderr, "rx binary header 32 bits crc\n");
-#endif
+    if (opt_d) fprintf(stderr, "rx binary header 32 bits crc\n");
 
     crc = 0xffffffffL;
 
     for (n = 0; n < 5; n++) {
-        c = rx(1000);
+        c = rx(SMALL_TIMEOUT);
         if (c == TIMEOUT) {
             return;
         }
@@ -858,10 +859,10 @@ void rx_bin32_header(int to)
 
     crc = ~crc;
 
-    rxd_crc = rx(1000);
-    rxd_crc |= ((long)rx(1000)) << 8;
-    rxd_crc |= ((long)rx(1000)) << 16;
-    rxd_crc |= ((long)rx(1000)) << 24;
+    rxd_crc = rx(SMALL_TIMEOUT);
+    rxd_crc |= ((long)rx(SMALL_TIMEOUT)) << 8;
+    rxd_crc |= ((long)rx(SMALL_TIMEOUT)) << 16;
+    rxd_crc |= ((long)rx(SMALL_TIMEOUT)) << 24;
 
     if (rxd_crc != crc) {
         return;
@@ -880,13 +881,9 @@ void rx_bin32_header(int to)
  */
 
 int rx_header_raw(int timeout, int errors)
-
 {
     int c;
 
-#ifdef DEBUG
-    fprintf(stderr, "rx header : ");
-#endif
     rxd_header_len = 0;
 
     do {
@@ -930,9 +927,6 @@ int rx_header_raw(int timeout, int errors)
             return c;
         }
 
-#ifdef DEBUG
-        fprintf(stderr, "\n");
-#endif
         switch (c) {
         case ZBIN:
             rx_bin16_header(timeout);
@@ -956,7 +950,6 @@ int rx_header_raw(int timeout, int errors)
             if (errors) {
                 return INVHDR;
             }
-
             continue;
         }
         if (errors && rxd_header_len == 0) {
@@ -978,10 +971,6 @@ int rx_header_raw(int timeout, int errors)
     if (rxd_header[0] == ZFILE) {
         ack_file_pos = 0l;
     }
-
-#ifdef DEBUG
-    fprintf(stderr, "type %d\n", rxd_header[0]);
-#endif
 
     return rxd_header[0];
 }

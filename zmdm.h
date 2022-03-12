@@ -61,6 +61,8 @@ EXTERN int management_newer;
 EXTERN int management_clobber;
 EXTERN int management_protect;
 
+#define SMALL_TIMEOUT 2000  /* Two seconds (approx.) */
+
 void cleanup(void);
 
 void fd_init(void); /* make the io channel raw */
@@ -92,7 +94,7 @@ void tx_hheader(unsigned char *buf, int n);
 
 void tx_flush(void);
 
-void tx_pos_header(int type, long pos);
+void tx_pos_header(enum ZFrameType type, long pos);
 
 void tx_raw(int c);
 

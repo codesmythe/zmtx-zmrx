@@ -51,28 +51,28 @@
  * zmodem frame types
  */
 
-#define ZRQINIT 0x00    /* request receive init (s->r) */
-#define ZRINIT 0x01     /* receive init (r->s) */
-#define ZSINIT 0x02     /* send init sequence (optional) (s->r) */
-#define ZACK 0x03       /* ack to ZRQINIT ZRINIT or ZSINIT (s<->r) */
-#define ZFILE 0x04      /* file name (s->r) */
-#define ZSKIP 0x05      /* skip this file (r->s) */
-#define ZNAK 0x06       /* last packet was corrupted (?) */
-#define ZABORT 0x07     /* abort batch transfers (?) */
-#define ZFIN 0x08       /* finish session (s<->r) */
-#define ZRPOS 0x09      /* resume data transmission here (r->s) */
-#define ZDATA 0x0a      /* data packet(s) follow (s->r) */
-#define ZEOF 0x0b       /* end of file reached (s->r) */
-#define ZFERR 0x0c      /* fatal read or write error detected (?) */
-#define ZCRC 0x0d       /* request for file CRC and response (?) */
-#define ZCHALLENGE 0x0e /* security challenge (r->s) */
-#define ZCOMPL 0x0f     /* request is complete (?) */
-#define ZCAN                                                                   \
-    0x10              /* pseudo frame;                                         \
-                                                 other end cancelled session with 5* CAN */
-#define ZFREECNT 0x11 /* request free bytes on file system (s->r) */
-#define ZCOMMAND 0x12 /* issue command (s->r) */
-#define ZSTDERR 0x13  /* output data to stderr (??) */
+enum ZFrameType {
+    ZRQINIT    = 0,      /* request receive init (s->r) */
+    ZRINIT     = 1,      /* receive init (r->s) */
+    ZSINIT     = 2,      /* send init sequence (optional) (s->r) */
+    ZACK       = 3,      /* ack to ZRQINIT ZRINIT or ZSINIT (s<->r) */
+    ZFILE      = 4,      /* file name (s->r) */
+    ZSKIP      = 5,      /* skip this file (r->s) */
+    ZNAK       = 6,      /* last packet was corrupted (?) */
+    ZABORT     = 7,      /* abort batch transfers (?) */
+    ZFIN       = 8,      /* finish session (s<->r) */
+    ZRPOS      = 9,      /* resume data transmission here (r->s) */
+    ZDATA      = 10,     /* data packet(s) follow (s->r) */
+    ZEOF       = 11,     /* end of file reached (s->r) */
+    ZFERR      = 12,     /* fatal read or write error detected (?) */
+    ZCRC       = 13,     /* request for file CRC and response (?) */
+    ZCHALLENGE = 14,     /* security challenge (r->s) */
+    ZCOMPL     = 15,     /* request is complete (?) */
+    ZCAN       = 16,     /* pseudo frame;  other end cancelled session with 5* CAN */
+    ZFREECNT   = 17,     /* request free bytes on file system (s->r) */
+    ZCOMMAND   = 18,     /* issue command (s->r) */
+    ZSTDERR    = 19,     /* output data to stderr (??) */
+};
 
 /*
  * ZDLE sequences
