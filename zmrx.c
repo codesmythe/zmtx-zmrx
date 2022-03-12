@@ -15,6 +15,9 @@
 
 #include "version.h"
 #include <ctype.h>
+#if __atarist__
+#include <getopt.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

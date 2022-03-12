@@ -1,41 +1,70 @@
 ## ZMRX/ZMTX
 
-This repository is a modernization of a mid 1990's implementation of the ZMODEM protocol called 'zmtx-zmrx'. The main goal is to have a version of ZMODEM that will run standalone on CP/M 2.2 and CP/M 3.
+This repository is a modernization of a mid 1990's implementation of the ZMODEM protocol called 'zmtx-zmrx'. The main goal is to have a version of ZMODEM that will run standalone on TOS/EmuTOS for the Atari ST and also various flavors of CP/M-80.
 
-This is currently a work-in-progress.
+This is currently a work-in-progress. The executables work, but transfer speeds on receive need a lot of improvement.
 
 ## BUILDING
 
-To build on UNIX with GCC, simply use make.
+### UNIX
 
-For CP/M, you'll need to have [Z88DK](https://z88dk.org/site) available. Ensure that `zcc` is in your path. Then to build, do:
+You can build for Unix/Linux by just using make. However, this version is not tested.
 
-    % make -f makefile.cpm
+### CP/M
 
-The binaries, ZMRX.COM and ZMTX.COM, will work on CP/M 2.2 and CP/M 3. 
+You'll need to have [Z88DK](https://z88dk.org/site) available. Ensure that `zcc` is in your path. Then to build, do:
 
+    $ make -f makefile.cpm
+
+or
+
+    $ make -f makefile.cpm.8085
+
+for the 8085 version.  The binaries, ZMRX.COM and ZMTX.COM, will work on CP/M 2.2 and CP/M 3. 
+
+### Atari ST (TOS/EmuTOS)
+
+You'll need to have [m68k-atari-mint cross-tools](http://vincent.riviere.free.fr/soft/m68k-atari-mint) installed and available on your PATH. You'll also need [CMake](https://cmake.org) installed. Adjust `toolchain_file.txt` for the paths to your compiler install.
+
+After cloning this repository, you need to clone and build the libcmini submodule:
+
+    $ git submodule init
+    $ git submodule update
+    $ (cd libcmini; make)
+
+Then, make a build directory and run CMake:
+
+    $ mkdir build
+    $ cd build
+    $ cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain_file.txt ..
+
+And finally from the build directoy, do the make:
+
+    $ make
+
+This will create the `zmrx.ttp` and `zmtx.ttp` executables in the build directory.    
 ## USAGE
 
-### Receiving to CP/M: ZMRX.COM
+### Receiving via ZMRX.COM
 
-To receive files to CP/M from a PC, use ZMRX.COM. It does not take any file parameters, but accepts these command line options:
+To receive files to TOS or CP/M from a PC, use ZMRX.COM. It does not take any file parameters, but accepts these command line options:
 
-| Option | Description                                                  |
-| ------ | ------------------------------------------------------------ |
-| -x n   | When n=0, use the console for transfers (default).<br />When n=1, use the AUX device for transfers (not supported for CP/M 2.2) |
-| -j     | Junk pathnames.                                              |
-| -n     | Transfer only if source is newer (not currently implemented for CP/M). |
-| -o     | Overwrite if file exists.                                    |
-| -p     | Protect (don't overwrite if file exists).                    |
-| -d     | Enable debug output                                          |
-| -v     | Enable verbose output                                        |
-| -q     | Quiet; don't print anything.                                 |
+| Option                     | Description                                                  |
+| -------------------------- | ------------------------------------------------------------ |
+| -x n (not support for TOS) | When n=0, use the console for transfers (default).<br />When n=1, use the AUX device for transfers (not supported for CP/M 2.2) |
+| -j                         | Junk pathnames.                                              |
+| -n                         | Transfer only if source is newer (not currently implemented for CP/M). |
+| -o                         | Overwrite if file exists.                                    |
+| -p                         | Protect (don't overwrite if file exists).                    |
+| -d                         | Enable debug output                                          |
+| -v                         | Enable verbose output                                        |
+| -q                         | Quiet; don't print anything.                                 |
 
  Only one of -n, -o or -p may be specified.
 
-### Transmitting from CP/M: ZMTX.COM
+### Transmitting via ZMTX.COM
 
-To transmit files from CP/M from a PC, use ZMTX.COM. This program requires at least one file name or wildcard patterns. More than one file name or wildcard expansion can be given on the command, but the maximum number of files that can be transferred in one invocation is 512 files.
+To transmit files from TOS or CP/M to a PC, use ZMTX.COM. This program requires at least one file name or wildcard patterns. More than one file name or wildcard expansion can be given on the command, but the maximum number of files that can be transferred in one invocation is 512 files.
 
 For example:
 
@@ -45,15 +74,15 @@ will transmit files on the A drive that match \*.COM, files on B: that match ZP\
 
 ZMTX.COM accepts these command line options:
 
-| Option | Description                                                  |
-| ------ | ------------------------------------------------------------ |
-| -x n   | When n=0, use the console for transfers (default).<br />When n=1, use the AUX device for transfers (not supported for CP/M 2.2) |
-| -n     | Transfer only if source is newer (not currently implemented for CP/M). |
-| -o     | Overwrite if file exists.                                    |
-| -p     | Protect (don't overwrite if file exists).                    |
-| -d     | Enable debug output                                          |
-| -v     | Enable verbose output                                        |
-| -q     | Quiet; don't print anything.                                 |
+| Option                       | Description                                                  |
+| ---------------------------- | ------------------------------------------------------------ |
+| -x n (not supported for TOS) | When n=0, use the console for transfers (default).<br />When n=1, use the AUX device for transfers (not supported for CP/M 2.2) |
+| -n                           | Transfer only if source is newer (not currently implemented for CP/M). |
+| -o                           | Overwrite if file exists.                                    |
+| -p                           | Protect (don't overwrite if file exists).                    |
+| -d                           | Enable debug output                                          |
+| -v                           | Enable verbose output                                        |
+| -q                           | Quiet; don't print anything.                                 |
 
 As with ZMRX.COM,  only one of -n, -o or -p may be specified.
 
