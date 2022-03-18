@@ -434,17 +434,19 @@ void cleanup(void)
 void usage(void)
 
 {
-    printf("zmtx %s %s (C) Mattheij Computer Service 1994\r\n", VERSION, VERSION_DATE);
+    printf("\rzmtx %s %s (C) Mattheij Computer Service 1994\r\n", VERSION, VERSION_DATE);
     printf("    CP/M port by Rob Gowin with help from Andrew Lynch.\r\n");
-    printf("    TOS port by Rob Gowin.\r\n");
+    printf("    TOS  port by Rob Gowin.\r\n");
 
-    printf("usage : zmtx options files\r\n");
+    printf("usage: zmtx [options] files...\r\n");
+#ifdef __CPM__
     printf("    -x n        n=0: use console for transfers (default)\r\n");
     printf("                n=1: use aux device for transfers\r\n");
+#endif
     printf("    -n          transfer if source is newer\r\n");
     printf("    -o          overwrite if exists\r\n");
     printf("    -p          protect (don't overwrite if exists)\r\n");
-    printf("\n");
+    printf("\r\n");
     printf("    -d          debug output\r\n");
     printf("    -v          verbose output\r\n");
     printf("    (only one of -n -o or -p may be specified)\r\n");
@@ -466,6 +468,9 @@ int main(int argc, char **argv)
     const char *optstring = "DX:NOPV";
 #else
     const char *optstring = "dnopv";
+#endif
+#if  __atarist__
+    argv[0] = "zmtx";
 #endif
     while ((ch = getopt(argc, argv, optstring)) != -1) {
         switch (ch) {
@@ -499,10 +504,10 @@ int main(int argc, char **argv)
                 break;
             case '?':
             default:
-                printf("zmtx: bad option '-%c'\r\n", optopt);
                 have_error = TRUE;
                 break;
         }
+        if (have_error) break;
     }
 
     if (have_error) usage();
