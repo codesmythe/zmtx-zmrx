@@ -434,18 +434,20 @@ void cleanup(void)
 void usage(void)
 
 {
-    printf("zmtx %s %s (C) Mattheij Computer Service 1994\n", VERSION, VERSION_DATE);
-    printf("    CP/M port by Rob Gowin with help from Andrew Lynch.\n");
-    printf("usage : zmtx options files\n");
-    printf("    -x n        n=0: use console for transfers (default)\n");
-    printf("                n=1: use aux device for transfers\n");
-    printf("    -n          transfer if source is newer\n");
-    printf("    -o          overwrite if exists\n");
-    printf("    -p          protect (don't overwrite if exists)\n");
+    printf("zmtx %s %s (C) Mattheij Computer Service 1994\r\n", VERSION, VERSION_DATE);
+    printf("    CP/M port by Rob Gowin with help from Andrew Lynch.\r\n");
+    printf("    TOS port by Rob Gowin.\r\n");
+
+    printf("usage : zmtx options files\r\n");
+    printf("    -x n        n=0: use console for transfers (default)\r\n");
+    printf("                n=1: use aux device for transfers\r\n");
+    printf("    -n          transfer if source is newer\r\n");
+    printf("    -o          overwrite if exists\r\n");
+    printf("    -p          protect (don't overwrite if exists)\r\n");
     printf("\n");
-    printf("    -d          debug output\n");
-    printf("    -v          verbose output\n");
-    printf("    (only one of -n -o or -p may be specified)\n");
+    printf("    -d          debug output\r\n");
+    printf("    -v          verbose output\r\n");
+    printf("    (only one of -n -o or -p may be specified)\r\n");
 
     cleanup();
 
@@ -497,7 +499,7 @@ int main(int argc, char **argv)
                 break;
             case '?':
             default:
-                printf("zmtx: bad option '-%c'\n", optopt);
+                printf("zmtx: bad option '-%c'\r\n", optopt);
                 have_error = TRUE;
                 break;
         }
