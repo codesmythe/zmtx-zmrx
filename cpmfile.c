@@ -1,6 +1,7 @@
 #include <cpm.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "fileio.h"
@@ -199,12 +200,12 @@ int get_matching_files_for_pattern(char *result, char *pattern, int max_matches)
  * Filenames have driver letter, colon, base name, dot, extention. For example, B:RLX16.COM.
  */
 
-int get_matching_files(char *result, int argc, char **argv)
+int get_matching_files(uint8_t *result, int argc, char **argv)
 {
     int matches_remaining = MAX_MATCHES;
     int total_matches = 0;
     for (int i = 0; i < argc; i++) {
-        int match_count = get_matching_files_for_pattern(result, argv[i], MAX_MATCHES - total_matches);
+        int match_count = get_matching_files_for_pattern((char *) result, argv[i], MAX_MATCHES - total_matches);
         if (match_count == -1) return -1;
         //printf("Pattern '%s' matched %d files.\n", argv[i], match_count);
         total_matches += match_count;

@@ -36,7 +36,7 @@ int validate_device_choice(char choice)
     return 1;
 }
 
-int get_matching_files(char *result, int argc, char **argv)
+int get_matching_files(uint8_t *result, int argc, char **argv)
 {
     return 0;
 }

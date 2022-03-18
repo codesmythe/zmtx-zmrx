@@ -536,7 +536,7 @@ int main(int argc, char **argv)
      * establish contact with the receiver
      */
 
-    n_files_remaining = get_matching_files(filenames, argc, argv);
+    n_files_remaining = get_matching_files((uint8_t *) filenames, argc, argv);
 
     if (opt_v) {
         fprintf(stderr, "Found %d %s to send.\r\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");
