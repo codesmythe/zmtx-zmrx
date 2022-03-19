@@ -8,16 +8,57 @@
 
 int use_aux = 0;
 
-long fileio_get_modification_time(const char *filename) {
-    FILE *fp = fopen(filename, "rb");
-    if (fp == NULL) return -1;
-    struct stat s;
-    fstat(fileno(fp), &s);
-    fclose(fp);
-    return s.st_mtime;
+static void parse_ftime(struct ftime *result, uint32_t dtval)
+{
+    result->ft_hour  = (dtval >> 27) & 0x1f;
+    result->ft_min   = (dtval >> 21) & 0x3f;
+    result->ft_tsec  = (dtval >> 16) & 0x1f;
+    result->ft_year  = (dtval >>  9) & 0x3f;
+    result->ft_month = (dtval >>  5) & 0xf;
+    result->ft_day   =  dtval        & 0x1f;
 }
 
-void fileio_set_modification_time(const char *filename, long mdate) {
+static struct ftime tmtoftime(struct tm *tm)
+{
+    struct ftime tostime;
+    tostime.ft_day = tm->tm_mday;
+    tostime.ft_month = tm->tm_mon + 1;
+    tostime.ft_year = tm->tm_year - 80;
+    tostime.ft_hour = tm->tm_hour;
+    tostime.ft_min  = tm->tm_min;
+    tostime.ft_tsec = tm->tm_sec / 2;
+    return tostime;
+}
+
+time_t fileio_get_modification_time(const char *filename) {
+    struct stat s;
+    struct ftime tosftime;
+
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) return 0;
+
+    int rc = fstat(fileno(fp), &s);
+    fclose(fp);
+    if (rc < 0) return 0;
+    /*
+     * The time-related items in stat are stored as TOS DOSTIME values.
+     * But main program deals with UNIX time (seconds since the epoch),
+     * so need to convert.
+     */
+    parse_ftime(&tosftime, s.st_mtime);
+    struct tm* my_tm = ftimtotm(&tosftime);
+    return mktime(my_tm);
+}
+
+void fileio_set_modification_time(const char *filename, time_t mdate) {
+    struct tm *tm = localtime(&mdate);
+    struct ftime tostime = tmtoftime(tm);
+
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) return;
+
+    Fdatime(&tostime, fileno(fp), 1);
+    fclose(fp);
 }
 
 long get_file_size(FILE *fp) {
@@ -29,8 +70,7 @@ long get_file_size(FILE *fp) {
 
 char *strip_path(char *path_in)
 {
-    // Nothing in particular to do for ST or unix.
-    return path_in;
+    return basename(path_in);
 }
 
 int validate_device_choice(char choice)

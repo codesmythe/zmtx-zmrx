@@ -32,7 +32,7 @@
 #endif
 
 FILE *fp = NULL;     /* fp of file being received or NULL */
-long mdate;          /* file date of file being received */
+time_t mdate;          /* file date of file being received */
 char filename[0x80]; /* filename of file being received */
 char *name; /* pointer to the part of the filename used in the actual open */
 
@@ -229,7 +229,7 @@ void receive_file()
 
     sscanf((char *)(rx_data_subpacket +
                           strlen((char *)rx_data_subpacket) + 1),
-           "%ld %lo", &size, &mdate);
+           "%ld %o", &size, &mdate);
 
     current_file_size = size;
 
@@ -238,7 +238,7 @@ void receive_file()
      */
 
     /* Returns 0 of the file does not exists; modification time otherwise */
-    long existing_file_modification_time = fileio_get_modification_time(name);
+    time_t existing_file_modification_time = fileio_get_modification_time(name);
 
     /*
      * if the file already exists here the management options need to

@@ -6,9 +6,9 @@
 
 #include "fileio.h"
 
-long fileio_get_modification_time(const char *filename) { return 0L; }
+time_t fileio_get_modification_time(const char *filename) { return 0L; }
 
-void fileio_set_modification_time(const char *filename, long mdate) {}
+void fileio_set_modification_time(const char *filename, long time_t) {}
 
 /*
 

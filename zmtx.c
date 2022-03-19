@@ -301,7 +301,7 @@ int send_file(char *name)
      * modification date
      */
 
-    sprintf(p, "%ld ", fileio_get_modification_time(name));
+    sprintf(p, "%o ", fileio_get_modification_time(name));
 
     p += strlen(p);
 
@@ -542,6 +542,8 @@ int main(int argc, char **argv)
      * establish contact with the receiver
      */
 
+    char filename[256];
+
     bzero(filenames, FILENAME_BUFFER_SIZE);
     n_files_remaining = get_matching_files(filenames, FILENAME_BUFFER_SIZE, argc, argv);
 
@@ -549,6 +551,17 @@ int main(int argc, char **argv)
 
     if (opt_v) {
         fprintf(stderr, "Found %d %s to send.\r\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");
+        if (opt_d) {
+            fprintf(stderr, "Here are the files to send:\r\n");
+            fnameptr = filenames;
+            while (*fnameptr != 0xFF) {
+                uint8_t fnamelen = *fnameptr++;
+                strncpy(filename, (char *) fnameptr, fnamelen);
+                filename[fnamelen] = 0;
+                fnameptr += fnamelen;
+                fprintf(stderr, "  '%s'\r\n", filename);
+            }
+        }
         fprintf(stderr, "zmtx: establishing contact with receiver\r\n");
     }
     rx_purge();
@@ -607,7 +620,7 @@ int main(int argc, char **argv)
      * and send each file in turn
      */
 
-    char filename[256];
+    fnameptr = filenames;
     while(*fnameptr != 0xFF) {
         uint8_t fnamelen = *fnameptr++;
         strncpy(filename, (char *) fnameptr, fnamelen);
