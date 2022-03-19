@@ -163,54 +163,67 @@ static struct fcb *init_fcb(char *dirbuf, char *dirpos, char *pattern, int quiet
 /// Populate array of filenames that match a given file or pattern, up to max_matches.
 /**
  *
- * @param result Buffer to contain matched filenames. Size must be at least max_matches * FILENAME_SIZE
+ * @param result Buffer to contain matched filenames.
+ * @param result_size The size of the matched filenames buffer in bytes.
  * @param pattern The single filename or wildcard pattern to search.
- * @param max_matches Maximum number of matches to process.
- * @return -1 of too many matches, otherwise number of matches found.
+ * @return NULL if too many matches to fit in result buffer, otherwise pointer to next free byte in result.
  */
-int get_matching_files_for_pattern(char *result, char *pattern, int max_matches)
+
+#define FILENAME_SIZE 16
+
+uint8_t* get_matching_files_for_pattern(uint8_t *result, uint16_t *result_size, int *match_count, char *pattern)
 {
     char dirbuf[134];
     char filename[FILENAME_SIZE];
     char dirpos = -1;
     struct fcb *the_fcb = init_fcb(dirbuf, &dirpos, pattern, 0);
     char drive_num = the_fcb->drive;
-    int  match_count = 0;
+    int buffer_remaining = *result_size;
 
     if (drive_num == 0) drive_num = bdos(CPM_IDRV, 0) + 1;
+
     while (dirpos != -1) {
-        if (match_count == max_matches) return -1;
         get_dir_entry_name(filename, dirbuf, dirpos, drive_num);
-        strncpy(result, filename, FILENAME_SIZE);
-        result += FILENAME_SIZE;
-        match_count++;
+        uint8_t len = strlen(filename);
+        if (buffer_remaining - len - 2 < 0) {
+            fprintf(stderr, "Error: Too many filenames (not enough room in filename buffer).\r\n");
+            return NULL;
+        }
+        *result++ = len;
+        strncpy((char *) result, filename, len);
+        result += len;
+        buffer_remaining -= len + 1;
+        *match_count = *match_count + 1;
         dirpos = bdos(CPM_FNXT, (int) the_fcb);
     }
-    return match_count;
+    *result_size  = buffer_remaining;
+    return result;
 }
 
 /// Populate array of filenames that match files or wildcard patterns in argv list.
 /**
  *
- * @param result Buffer to contain matched filenames. Size must be at least MAX_MATCHES * FILENAME_SIZE.
+ * @param result Buffer to contain matched filenames.
+ * @param result_size The size of the matched filenames buffer in bytes.
  * @param argc Number of items in argv pattern list.
  * @param argv List of patterns or full files names to search.
- * @return Result buffer filled with found filenames. Each filename occupies FILENAME_SIZE bytes and is zero terminated.
+ * @return Result buffer filled with found filenames. For each file name entry, the first byte
+ *         is the length of the filename, follow by that many bytes (not zero terminated). The
+ *         value 0xFF for the length marks the end of the list.
+ *
+ *         The total number of matches is returned.
  *
  * Filenames have driver letter, colon, base name, dot, extention. For example, B:RLX16.COM.
  */
 
-int get_matching_files(uint8_t *result, int argc, char **argv)
+int get_matching_files(uint8_t *result, uint16_t result_size, int argc, char **argv)
 {
-    int matches_remaining = MAX_MATCHES;
     int total_matches = 0;
     for (int i = 0; i < argc; i++) {
-        int match_count = get_matching_files_for_pattern((char *) result, argv[i], MAX_MATCHES - total_matches);
-        if (match_count == -1) return -1;
-        //printf("Pattern '%s' matched %d files.\n", argv[i], match_count);
-        total_matches += match_count;
-        result += match_count * FILENAME_SIZE;
+        result = get_matching_files_for_pattern(result, &result_size, &total_matches, argv[i]);
+        if (result == NULL) return -1;
     }
+    *result = 0xff;
     return total_matches;
 
 }

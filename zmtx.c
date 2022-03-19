@@ -459,7 +459,8 @@ void usage(void)
 int main(int argc, char **argv)
 
 {
-    char filenames[MAX_MATCHES * FILENAME_SIZE];
+    uint8_t filenames[FILENAME_BUFFER_SIZE];
+    uint8_t *fnameptr = filenames;
     int i;
     int have_error = FALSE;
     int ch;
@@ -541,7 +542,10 @@ int main(int argc, char **argv)
      * establish contact with the receiver
      */
 
-    n_files_remaining = get_matching_files((uint8_t *) filenames, argc, argv);
+    bzero(filenames, FILENAME_BUFFER_SIZE);
+    n_files_remaining = get_matching_files(filenames, FILENAME_BUFFER_SIZE, argc, argv);
+
+    if (n_files_remaining < 0) exit(1);
 
     if (opt_v) {
         fprintf(stderr, "Found %d %s to send.\r\n", n_files_remaining, n_files_remaining == 1 ? "file" : "files");
@@ -603,15 +607,19 @@ int main(int argc, char **argv)
      * and send each file in turn
      */
 
-    char *filename = filenames;
-    while(n_files_remaining) {
+    char filename[256];
+    while(*fnameptr != 0xFF) {
+        uint8_t fnamelen = *fnameptr++;
+        strncpy(filename, (char *) fnameptr, fnamelen);
+        filename[fnamelen] = 0;
+        fnameptr += fnamelen;
+
         if (send_file(filename)) {
             if (opt_v) {
                 fprintf(stderr, "zmtx: remote aborted.\r\n");
             }
             break;
         }
-        filename += FILENAME_SIZE;
         n_files_remaining--;
     }
 

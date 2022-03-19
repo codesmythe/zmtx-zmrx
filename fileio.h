@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define MAX_MATCHES 512   /* Max number of filenames eturned by wildcard matcher. */
-#define FILENAME_SIZE 16  /* Size of one filename entry */
+#define FILENAME_BUFFER_SIZE 8192
 
 long fileio_get_modification_time(const char *filename);
 void fileio_set_modification_time(const char *filename, long mdate);
@@ -15,6 +14,6 @@ int validate_device_choice(char choice);
 
 long get_file_size(FILE *fp);
 
-int get_matching_files(uint8_t *result, int argc, char **argv);
+int get_matching_files(uint8_t *result, uint16_t result_size, int argc, char **argv);
 
 #endif
