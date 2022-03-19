@@ -20,10 +20,32 @@ jobs:
           fetch-depth: 0
       - name: Clone Z88DK repository
         run: git clone --depth=1 --recursive  https://github.com/z88dk/z88dk.git
-      - name: Update Ubuntu package lists
-        run: sudo apt-get update
-      - name: Install additional dependencies
-        run: sudo apt-get install -y libxml2-dev
+      - name: Install packages
+        run: |
+          sudo add-apt-repository -y ppa:vriviere/ppa
+#         sudo add-apt-repository -y ppa:vriviere/arm
+          sudo apt-get update
+          sudo apt-get install -y bison cmake cross-mint-essential flex libxml2-dev
+      - name: Display package versions
+        run: |
+          git --version
+          make --version
+          ld --version
+          gcc --version
+          awk -W version
+          cmake --version
+          m68k-atari-mint-ld --version
+          m68k-atari-mint-ar --version
+          m68k-atari-mint-gcc --version
+      - name: Build TOS version of ZMTX.TTP and ZMRX.TTP
+        run: |
+          git submodule init
+          git submodule update
+          (cd libcmini; make)
+          mkdir build
+          cd build
+          cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain_file.txt ..
+          make
       - name: Build Z88DK 
         run: |
           cd z88dk
@@ -36,11 +58,17 @@ jobs:
           make -f makefile.cpm
       - uses: actions/upload-artifact@v2
         with:
-            name: ZMTX binary
+            name: ZMTX CPM binary
             path: ${{ github.workspace }}/ZMTX.COM
       - uses: actions/upload-artifact@v2
         with:
-            name: ZMRX binary
+            name: ZMRX CPM binary
             path: ${{ github.workspace }}/ZMRX.COM
-
-
+      - uses: actions/upload-artifact@v2
+        with:
+            name: ZMTX TOS binary
+            path: ${{ github.workspace }}/build/zmtx.ttp
+      - uses: actions/upload-artifact@v2
+        with:
+            name: ZMRX TOS binary
+            path: ${{ github.workspace }}/build/zmrx.ttp
