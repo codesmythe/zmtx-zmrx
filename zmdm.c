@@ -432,7 +432,7 @@ void tx_znak()
             default:
                 /*
                  * if all control characters should be escaped
-                 * and this one wasnt then its spurious and
+                 * and this one wasn't then its spurious and
                  * should be dropped.
                  */
                 if (escape_all_control_characters && (c & 0x60) == 0) {
@@ -844,7 +844,7 @@ void rx_bin32_header(int to)
     unsigned long crc;
     unsigned long rxd_crc;
 
-    if (opt_d) fprintf(stderr, "rx binary header 32 bits crc\n");
+    if (opt_d) fprintf(stderr, "rx binary header 32 bits crc\r\n");
 
     crc = 0xffffffffL;
 
