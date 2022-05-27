@@ -56,30 +56,14 @@ time_t transfer_start;
  */
 
 void show_progress(char *progress_fname, FILE *progress_fp)
-
 {
-    long percentage;
+    long pos = (long) ftell(progress_fp);
+    long percentage = current_file_size == 0 ? 0 : pos * 100 / current_file_size;
+    time_t duration = time(NULL) - transfer_start;
+    long cps = duration == 0L ? 0 : pos / duration;
 
-    time_t duration;
-    long cps;
-
-    if (current_file_size > 0) {
-        percentage = ((long)ftell(progress_fp) * 100) / current_file_size;
-    } else {
-        percentage = 100;
-    }
-
-    duration = time(NULL) - transfer_start;
-
-    if (duration == 0l) {
-        duration = 1;
-    }
-
-    cps = (long)ftell(progress_fp) / duration;
-
-    fprintf(stderr,
-            "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
-            progress_fname, ftell(progress_fp), percentage, cps);
+    fprintf(stderr,"zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
+            progress_fname, pos, percentage, cps);
 }
 
 /*
