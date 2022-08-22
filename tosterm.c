@@ -18,7 +18,7 @@
 extern int opt_d;
 extern int last_sent;
 
-const int AUX_DEV = 10;
+const int AUX_DEV = 11;
 const int CONSOLE_DEV = 2;
 
 int fd_init_done = 0;
@@ -49,10 +49,12 @@ struct ring_buffer ring_buffer;
  * No-ops on the Atari ST.
  */
 
-int16_t has_bconmap(void)
+static int16_t has_bconmap(void)
 {
     return (0L == Bconmap(0));
 }
+
+int32_t old_bconmap_dev = -1;
 
 void fd_init(void) {
 
@@ -65,7 +67,7 @@ void fd_init(void) {
     ring_buffer.head = ring_buffer.tail = 0;
 
     /* Map in our device to that Iorec and Rsconf act on it. */
-    int32_t old_bconmap_dev = Bconmap(AUX_DEV);
+    old_bconmap_dev = Bconmap(AUX_DEV);
 
     /* Get pointer to Rs232 input record */
     savep = (_IOREC * )Iorec(0);
@@ -113,12 +115,11 @@ void fd_exit(void)
     savep->ibuftl   = save.ibuftl;
 
     /* Map in our device so that Rsconf acts on it. */
-    int32_t old_bconmap_dev = Bconmap(AUX_DEV);
+    Bconmap(AUX_DEV);
     /* Turn off hardware flow control. There's no way to restore previous value. */
     Rsconf(-1, 0, -1, -1, -1, -1);
 
     Bconmap(old_bconmap_dev);
-
 }
 
 /*
@@ -204,6 +205,7 @@ static int read_modem(struct ring_buffer *ringbuf)
             if (Bconstat(CONSOLE_DEV)) {
                 if ((Bconin(CONSOLE_DEV) & 0x7f) == 0x3) { /* is console char a CTRL-C? */
                     cleanup();
+                    printf("Exiting due to Control-C.\r\n");
                     exit(CAN);
                 }
             }
@@ -243,20 +245,13 @@ static int read_modem(struct ring_buffer *ringbuf)
 int rx_raw(int timeout)
 {
     static int num_cancels = 0;
-#if 0
-   if (Bconstat(AUX_DEV)) {
-       uint16_t tail = ring_buffer.tail + 1;
-       if (tail == ring_buffer.size) tail = 0;
-       if (tail != ring_buffer.head) {
-           ring_buffer.buffer[tail] = Bconin(AUX_DEV);
-           ring_buffer.tail = tail;
-       }
-   }
-#endif
+
+    uint16_t tail = ring_buffer.tail;
+    if (tail >= ring_buffer.size) tail = 0;
     /* If there isn't a character available, wait for the modem to get one. */
-    if (ring_buffer.tail == ring_buffer.head) {
+    if (tail == ring_buffer.head) {
         /* Change the timeout into seconds; minimum is 2. */
-        int timeout_secs = timeout / 1024;
+        int timeout_secs = timeout / 1000;
         if (timeout_secs == 0) timeout_secs = 2;
 
         /* Set up an alarm in case I/O takes too long. */
@@ -269,9 +264,10 @@ int rx_raw(int timeout)
         if (n == 0) return TIMEOUT;
     }
     /* At this point, there is at least one character available in the ring buffer. */
-    int c = ring_buffer.buffer[ring_buffer.head++];
+    ring_buffer.head++;
+    if (ring_buffer.head >= ring_buffer.size) ring_buffer.head = 0;
+    int c = ring_buffer.buffer[ring_buffer.head];
 
-    if (ring_buffer.head == ring_buffer.size) ring_buffer.head = 0;
     if (c == CAN) {
         num_cancels++;
         if (num_cancels == 5) {
