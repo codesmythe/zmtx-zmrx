@@ -634,6 +634,12 @@ int rx_data(unsigned char *p, int *l)
         sub_frame_type = rx_16_data(p, l);
     }
 
+    if (check_user_abort()) {
+        cleanup();
+        printf("Exiting due to Control-C.\r\n");
+        exit(CAN);
+    }
+
     switch (sub_frame_type) {
     case TIMEOUT:
         return TIMEOUT;

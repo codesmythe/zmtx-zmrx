@@ -33,7 +33,7 @@ _IOREC save,     /* the original Iorec is saved here for the duration of this pr
 
 char iobuf[IBUFSIZ]; /* RS232 receive buffer. */
 
-#define RING_BUFFER_SIZE 1024 /* MAX 65535 */
+#define RING_BUFFER_SIZE 48000 /* MAX 65535 */
 
 struct ring_buffer {
     unsigned char buffer[RING_BUFFER_SIZE];
@@ -196,20 +196,23 @@ static void stalarm(long n) /* n is number of seconds, roughly */
     }
 }
 
+int check_user_abort()
+{
+    int result = 0;
+    if (AUX_DEV != CONSOLE_DEV) {
+        if (Bconstat(CONSOLE_DEV)) {
+            if ((Bconin(CONSOLE_DEV) & 0x7f) == 0x3) { /* is console char a CTRL-C? */
+                result = 1;
+            }
+        }
+    }
+    return result;
+}
+
 static int read_modem(struct ring_buffer *ringbuf)
 {
     int read_count = 0;
     while (1) {
-        /* Process Control-C, but only if console and modem ports are different. */
-        if (AUX_DEV != CONSOLE_DEV) {
-            if (Bconstat(CONSOLE_DEV)) {
-                if ((Bconin(CONSOLE_DEV) & 0x7f) == 0x3) { /* is console char a CTRL-C? */
-                    cleanup();
-                    printf("Exiting due to Control-C.\r\n");
-                    exit(CAN);
-                }
-            }
-        }
         /* See if there are characters available from the modem. If so, read them. */
         while (Bconstat(AUX_DEV)) {
             /* There is a character available. See if there is room in the buffer before accepting the character. */
@@ -255,7 +258,17 @@ int rx_raw(int timeout)
         if (timeout_secs == 0) timeout_secs = 2;
 
         /* Set up an alarm in case I/O takes too long. */
-        if (setjmp(tohere)) return TIMEOUT;
+        if (setjmp(tohere)) {
+            // If there is a timeout, perhaps something is wrong. Anyway,
+            // performance is no longer a concern in this case, so convenient
+            // to check for a user abort here.
+            if (check_user_abort()) {
+                cleanup();
+                printf("Exiting due to Control-C.\r\n");
+                exit(CAN);
+            }
+            return TIMEOUT;
+        }
 
         stalarm(timeout_secs);
         int n = read_modem(&ring_buffer);
