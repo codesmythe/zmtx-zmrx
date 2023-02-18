@@ -38,6 +38,8 @@ char *name; /* pointer to the part of the filename used in the actual open */
 
 #ifdef __CPM__
 extern int use_aux;
+#else
+extern int AUX_DEV;
 #endif
 
 int opt_v = FALSE; /* show progress output */
@@ -56,30 +58,14 @@ time_t transfer_start;
  */
 
 void show_progress(char *progress_fname, FILE *progress_fp)
-
 {
-    long percentage;
+    long pos = (long) ftell(progress_fp);
+    long percentage = current_file_size == 0 ? 0 : pos * 100 / current_file_size;
+    time_t duration = time(NULL) - transfer_start;
+    long cps = duration == 0L ? 0 : pos / duration;
 
-    time_t duration;
-    long cps;
-
-    if (current_file_size > 0) {
-        percentage = ((long)ftell(progress_fp) * 100) / current_file_size;
-    } else {
-        percentage = 100;
-    }
-
-    duration = time(NULL) - transfer_start;
-
-    if (duration == 0l) {
-        duration = 1;
-    }
-
-    cps = (long)ftell(progress_fp) / duration;
-
-    fprintf(stderr,
-            "zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
-            progress_fname, ftell(progress_fp), percentage, cps);
+    fprintf(stderr,"zmrx: receiving file \"%s\" %8ld bytes (%3ld %%/%5ld cps)\r",
+            progress_fname, pos, percentage, cps);
 }
 
 /*
@@ -358,6 +344,8 @@ void usage(void)
 #ifdef __CPM__
     printf("    -x n        n=0: use console for transfers (default)\n");
     printf("                n=1: use aux device for transfers\n");
+#else
+    printf("    -x N        Use device N as AUX device\r\n");
 #endif
     printf("    -j          junk pathnames\r\n");
     printf("    -n          transfer if source is newer\r\n");
@@ -390,7 +378,7 @@ int main(int argc, char **argv)
     use_aux = FALSE;
     const char *optstring = "DJX:NOPVQ";
 #else
-    const char *optstring = "djnopvq";
+    const char *optstring = "djx:nopvq";
 #endif
 
     while ((ch = getopt(argc, argv, optstring)) != -1) {
@@ -403,14 +391,18 @@ int main(int argc, char **argv)
             case 'j':
                 junk_pathnames = TRUE;
                 break;
-#ifdef __CPM__
             case 'X':
-                if (validate_device_choice(optarg[0])) {
+            case 'x':
+                if (validate_device_choice(optarg)) {
+#ifdef __CPM__
                     if (optarg[0] == '0') use_aux = FALSE;
                     else if (optarg[0] == '1') use_aux = TRUE;
+#else
+                    AUX_DEV = (int)strtol(optarg, NULL, 10);
+                    printf("Using AUX device %d.\n", AUX_DEV);
+#endif
                 } else have_error = TRUE;
                 break;
-#endif
             case 'N':
             case 'n':
                 management_newer = TRUE;
@@ -479,7 +471,7 @@ int main(int argc, char **argv)
     }
 
     /*
-     * make sure we dont get any old garbage
+     * make sure we don't get any old garbage
      */
 
     rx_purge();

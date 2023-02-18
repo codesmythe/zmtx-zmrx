@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(zmtx-zmrx VERSION 0.1)
 
-add_executable(zmtx.ttp zmtx.c zmdm.c crctab.c tosterm.c tosfile.c)
-add_executable(zmrx.ttp zmrx.c zmdm.c crctab.c tosterm.c tosfile.c)
+add_executable(zmtx.ttp zmtx.c zmdm.c crctab.c tosterm.c tosfile.c getopt.c)
+add_executable(zmrx.ttp zmrx.c zmdm.c crctab.c tosterm.c tosfile.c getopt.c)
 
 
 target_compile_options(zmrx.ttp PUBLIC -Wall -Werror -O2 -std=c99)
