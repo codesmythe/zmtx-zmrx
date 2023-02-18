@@ -68,9 +68,9 @@ char *strip_path(char *path_in)
     return p;
 }
 
-int validate_device_choice(char choice) {
-    if (choice== '0') return 1;
-    else if (choice == '1') {
+int validate_device_choice(const char *choice) {
+    if (choice[0] == '0') return 1;
+    else if (choice[0] == '1') {
         /*
          * We don't allow use of aux device on CP/M 2.2 because I don't
          * see a way to check the status of AUXOUT on that OS.
@@ -83,7 +83,7 @@ int validate_device_choice(char choice) {
         }
         return 1;
     } else {
-        printf("zmtx: bad value for -X, expected '0' or '1', got '%s'\n", optarg);
+        printf("zmtx: bad value for -X, expected '0' or '1', got '%s'\n", choice);
         return 0;
     }
     return 1;

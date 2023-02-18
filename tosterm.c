@@ -18,8 +18,9 @@
 extern int opt_d;
 extern int last_sent;
 
-const int AUX_DEV = 11;
-const int CONSOLE_DEV = 2;
+/* Eventually, allow these to be set on the command line. */
+int AUX_DEV = 1;
+int CONSOLE_DEV = 2;
 
 int fd_init_done = 0;
 
@@ -49,6 +50,8 @@ struct ring_buffer ring_buffer;
  * No-ops on the Atari ST.
  */
 
+int16_t have_bconmap = 0;
+
 static int16_t has_bconmap(void)
 {
     return (0L == Bconmap(0));
@@ -58,16 +61,14 @@ int32_t old_bconmap_dev = -1;
 
 void fd_init(void) {
 
-    if (!has_bconmap()) {
-        fprintf(stderr, "BCONMAP not supported. That is unexpected.\r\n");
-        return;
-    }
-
     ring_buffer.size = RING_BUFFER_SIZE;
     ring_buffer.head = ring_buffer.tail = 0;
 
-    /* Map in our device to that Iorec and Rsconf act on it. */
-    old_bconmap_dev = Bconmap(AUX_DEV);
+    if (has_bconmap()) {
+        /* Map in our device so that Iorec and Rsconf act on it. */
+        old_bconmap_dev = Bconmap(AUX_DEV);
+        have_bconmap = 1;
+    }
 
     /* Get pointer to Rs232 input record */
     savep = (_IOREC * )Iorec(0);
@@ -91,18 +92,13 @@ void fd_init(void) {
     const int flow_ctrl_hard = 2;
     Rsconf(-1, flow_ctrl_hard, -1, -1, -1, -1);
 
-    Bconmap(old_bconmap_dev);
+    if (have_bconmap) Bconmap(old_bconmap_dev);
 
     fd_init_done = 1;
 }
 
 void fd_exit(void)
 {
-    if (!has_bconmap()) {
-        fprintf(stderr, "BCONMAP not supported. That is unexpected.\r\n");
-        return;
-    }
-
     if (!fd_init_done) return;
 
     /* Reset to saved system buffer. */
@@ -115,11 +111,11 @@ void fd_exit(void)
     savep->ibuftl   = save.ibuftl;
 
     /* Map in our device so that Rsconf acts on it. */
-    Bconmap(AUX_DEV);
+    if (have_bconmap) Bconmap(AUX_DEV);
     /* Turn off hardware flow control. There's no way to restore previous value. */
     Rsconf(-1, 0, -1, -1, -1, -1);
 
-    Bconmap(old_bconmap_dev);
+    if (have_bconmap) Bconmap(old_bconmap_dev);
 }
 
 /*
@@ -254,7 +250,7 @@ int rx_raw(int timeout)
     /* If there isn't a character available, wait for the modem to get one. */
     if (tail == ring_buffer.head) {
         /* Change the timeout into seconds; minimum is 2. */
-        int timeout_secs = timeout / 1000;
+        int timeout_secs = timeout / 1024;
         if (timeout_secs == 0) timeout_secs = 2;
 
         /* Set up an alarm in case I/O takes too long. */

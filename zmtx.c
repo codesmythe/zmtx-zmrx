@@ -35,6 +35,8 @@
 
 #ifdef __CPM__
 extern int use_aux;
+#else
+extern int AUX_DEV;
 #endif
 
 int opt_v = FALSE;                      /* show progress output */
@@ -442,6 +444,8 @@ void usage(void)
 #ifdef __CPM__
     printf("    -x n        n=0: use console for transfers (default)\r\n");
     printf("                n=1: use aux device for transfers\r\n");
+#else
+    printf("    -x N        Use device N as AUX device\r\n");
 #endif
     printf("    -n          transfer if source is newer\r\n");
     printf("    -o          overwrite if exists\r\n");
@@ -468,7 +472,7 @@ int main(int argc, char **argv)
     use_aux = FALSE;
     const char *optstring = "DX:NOPV";
 #else
-    const char *optstring = "dnopv";
+    const char *optstring = "dx:nopv";
 #endif
 #if  __atarist__
     argv[0] = "zmtx";
@@ -479,14 +483,18 @@ int main(int argc, char **argv)
             case 'd':
                 opt_d = TRUE;
                 break;
-#ifdef __CPM__
             case 'X':
-                if (validate_device_choice(optarg[0])) {
+            case 'x':
+                if (validate_device_choice(optarg)) {
+#ifdef __CPM__
                     if (optarg[0] == '0') use_aux = FALSE;
                     else if (optarg[0] == '1') use_aux = TRUE;
+#else
+                    AUX_DEV = (int)strtol(optarg, NULL, 10);
+                    printf("Using AUX device %d.\n", AUX_DEV);
+#endif
                 } else have_error = TRUE;
                 break;
-#endif
             case 'N':
             case 'n':
                 management_newer = TRUE;

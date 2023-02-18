@@ -73,9 +73,20 @@ char *strip_path(char *path_in)
     return basename(path_in);
 }
 
-int validate_device_choice(char choice)
+int validate_device_choice(const char *choice)
 {
-    // All choices are valid at this point.
+    // Choice should be an integer that is less than or equal to
+    // the highest map BCONMAP device.
+    char *endptr;
+    long val = strtol(choice, &endptr, 10);
+    if (*endptr != 0) {
+        fprintf(stderr, "Error: invalid device choice '%s'\n", choice);
+        return 0;
+    }
+    if (val < 0 || val > 12) {
+        fprintf(stderr, "Error: Device choice should be between 1 and 12, got %ld\n", val);
+        return 0;
+    }
     return 1;
 }
 
