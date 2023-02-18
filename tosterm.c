@@ -18,8 +18,9 @@
 extern int opt_d;
 extern int last_sent;
 
-const int AUX_DEV = 10;
-const int CONSOLE_DEV = 2;
+/* Eventually, allow these to be set on the command line. */
+int AUX_DEV = 1;
+int CONSOLE_DEV = 2;
 
 int fd_init_done = 0;
 
@@ -40,20 +41,21 @@ char iobuf[IBUFSIZ]; /* RS232 receive buffer. */
  * No-ops on the Atari ST.
  */
 
+int16_t have_bconmap = 0;
+
 int16_t has_bconmap(void)
 {
     return (0L == Bconmap(0));
 }
+int32_t old_bconmap_dev = -1;
 
-void fd_init(void) {
-
-    if (!has_bconmap()) {
-        fprintf(stderr, "BCONMAP not supported. That is unexpected.\r\n");
-        return;
+void fd_init(void)
+{
+    if (has_bconmap()) {
+        /* Map in our device so that Iorec and Rsconf act on it. */
+        old_bconmap_dev = Bconmap(AUX_DEV);
+        have_bconmap = 1;
     }
-
-    /* Map in our device to that Iorec and Rsconf act on it. */
-    int32_t old_bconmap_dev = Bconmap(AUX_DEV);
 
     /* Get pointer to Rs232 input record */
     savep = (_IOREC * )Iorec(0);
@@ -77,18 +79,13 @@ void fd_init(void) {
     const int flow_ctrl_hard = 2;
     Rsconf(-1, flow_ctrl_hard, -1, -1, -1, -1);
 
-    Bconmap(old_bconmap_dev);
+    if (have_bconmap) Bconmap(old_bconmap_dev);
 
     fd_init_done = 1;
 }
 
 void fd_exit(void)
 {
-    if (!has_bconmap()) {
-        fprintf(stderr, "BCONMAP not supported. That is unexpected.\r\n");
-        return;
-    }
-
     if (!fd_init_done) return;
 
     /* Reset to saved system buffer. */
@@ -101,12 +98,11 @@ void fd_exit(void)
     savep->ibuftl   = save.ibuftl;
 
     /* Map in our device so that Rsconf acts on it. */
-    int32_t old_bconmap_dev = Bconmap(AUX_DEV);
+    if (have_bconmap) Bconmap(AUX_DEV);
     /* Turn off hardware flow control. There's no way to restore previous value. */
     Rsconf(-1, 0, -1, -1, -1, -1);
 
-    Bconmap(old_bconmap_dev);
-
+    if (have_bconmap) Bconmap(old_bconmap_dev);
 }
 
 /*
@@ -174,30 +170,32 @@ void rd_time() {
  */
 void stalarm(unsigned int n) /* n is number of seconds, roughly */
 {
-    if(n > 0)
-    {
+    alrm_time = 0;
+    if (n > 0) {
         Supexec(rd_time);
         /* We really need n * 200 but n * 256 is close enough */
         alrm_time = present_time + ( n << 8 );
     }
-    else
-        alrm_time = 0L;
 }
+
+int check_user_abort()
+{
+    int result = 0;
+    if (AUX_DEV != CONSOLE_DEV) {
+        if (Bconstat(CONSOLE_DEV)) {
+            if ((Bconin(CONSOLE_DEV) & 0x7f) == 0x3) { /* is console char a CTRL-C? */
+                result = 1;
+            }
+        }
+    }
+    return result;
+}
+
 
 int read_modem(unsigned char *buf, int count) {
     int n = 0;
 
     while (1) {
-
-        if (AUX_DEV != CONSOLE_DEV) {
-            if (Bconstat(CONSOLE_DEV)) {
-                if ((Bconin(CONSOLE_DEV) & 0x7f) == 0x3) { /* is console char a CTRL-C? */
-                    cleanup();
-                    exit(CAN);
-                }
-            }
-        }
-
         if (Bconstat(AUX_DEV)) {
             /* Character available. Read it. */
             n++;
@@ -238,7 +236,7 @@ int inputbuffer_index;
 /* inline */
 int rx_raw(int timeout)
 {
-    static int n_cans = 0;
+    static int num_cancels = 0;
 
     if (n_in_inputbuffer == 0) {
         /*
@@ -255,7 +253,15 @@ int rx_raw(int timeout)
          */
 
         if (setjmp(tohere)) {
+            // If there is a timeout, perhaps something is wrong. Anyway,
+            // performance is no longer a concern in this case, so convenient
+            // to check for a user abort here.
             n_in_inputbuffer = 0;
+            if (check_user_abort()) {
+                cleanup();
+                printf("Exiting due to Control-C.\r\n");
+                exit(CAN);
+            }
             return TIMEOUT;
         }
 
@@ -281,23 +287,17 @@ int rx_raw(int timeout)
         inputbuffer_index = 0;
     }
 
+    /* At this point, there is at least one character available in the buffer. */
     unsigned char c = inputbuffer[inputbuffer_index++];
     n_in_inputbuffer--;
-
     if (c == CAN) {
-        n_cans++;
-        if (n_cans == 5) {
-            /*
-             * the other side is serious about this. just shut up;
-             * clean up and exit.
-             */
+        num_cancels++;
+        if (num_cancels == 5) {
+            /* The other side is serious about this. Just shut up, clean up and exit. */
             cleanup();
-
             exit(CAN);
         }
     }
-    else {
-        n_cans = 0;
-    }
+    else num_cancels = 0;
     return c;
 }
