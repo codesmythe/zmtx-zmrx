@@ -25,7 +25,7 @@ jobs:
           sudo add-apt-repository -y ppa:vriviere/ppa
           # sudo add-apt-repository -y ppa:vriviere/arm
           sudo apt-get update
-          sudo apt-get install -y bison cmake cross-mint-essential flex libxml2-dev
+          sudo apt-get install -y bison cmake cross-mint-essential flex libxml2-dev re2c
       - name: Display package versions
         run: |
           git --version
