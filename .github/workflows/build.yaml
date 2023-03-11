@@ -1,4 +1,4 @@
-#
+
 # A GitHub Action to first build Z88DK from source, then 
 # build ZMTX-ZMRX.
 #
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build ZMTX and ZMRX CP/M 2.2. binaries, cross compiled via Z88DK.
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Clone Z88DK repository
@@ -57,19 +57,19 @@ jobs:
       - name: Build ZMTX.COM and ZMRX.COM
         run: |
           make -f makefile.cpm
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
             name: ZMTX CPM binary
             path: ${{ github.workspace }}/ZMTX.COM
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
             name: ZMRX CPM binary
             path: ${{ github.workspace }}/ZMRX.COM
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
             name: ZMTX TOS binary
             path: ${{ github.workspace }}/build/zmtx.ttp
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
             name: ZMRX TOS binary
             path: ${{ github.workspace }}/build/zmrx.ttp
