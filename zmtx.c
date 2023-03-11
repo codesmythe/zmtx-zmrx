@@ -36,7 +36,7 @@
 #ifdef __CPM__
 extern int use_aux;
 #else
-extern int AUX_DEV;
+extern int AUX_DEV_CMD_LINE;
 #endif
 
 int opt_v = FALSE;                      /* show progress output */
@@ -490,8 +490,8 @@ int main(int argc, char **argv)
                     if (optarg[0] == '0') use_aux = FALSE;
                     else if (optarg[0] == '1') use_aux = TRUE;
 #else
-                    AUX_DEV = (int)strtol(optarg, NULL, 10);
-                    printf("Using AUX device %d.\n", AUX_DEV);
+                    AUX_DEV_CMD_LINE = (int)strtol(optarg, NULL, 10);
+                    printf("Using AUX device %d.\n", AUX_DEV_CMD_LINE);
 #endif
                 } else have_error = TRUE;
                 break;

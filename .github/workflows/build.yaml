@@ -25,7 +25,7 @@ jobs:
           sudo add-apt-repository -y ppa:vriviere/ppa
           # sudo add-apt-repository -y ppa:vriviere/arm
           sudo apt-get update
-          sudo apt-get install -y bison cmake cross-mint-essential flex libxml2-dev re2c
+          sudo apt-get install -y bison cmake cross-mint-essential flex libxml2-dev re2c dos2unix
       - name: Display package versions
         run: |
           git --version
@@ -41,6 +41,7 @@ jobs:
         run: |
           git submodule init
           git submodule update
+          echo "CFLAGS += -DSTDIO_MAP_NEWLINE" > libcmini/Make.config
           (cd libcmini; make)
           mkdir build
           cd build

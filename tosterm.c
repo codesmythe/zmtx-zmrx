@@ -16,9 +16,10 @@
 #define IBUFSIZ               32000 /* Size of Rs232 receive buffer, can't exceed 32767. */
 
 extern int opt_d;
+extern int opt_v;
 extern int last_sent;
 
-/* Eventually, allow these to be set on the command line. */
+int AUX_DEV_CMD_LINE=-1;
 int AUX_DEV = 1;
 int CONSOLE_DEV = 2;
 
@@ -33,6 +34,9 @@ _IOREC save,     /* the original Iorec is saved here for the duration of this pr
      *savep;     /* ptr returned by Iorec() */
 
 char iobuf[IBUFSIZ]; /* RS232 receive buffer. */
+
+#define C__MCH 0x5F4D4348L     /* Machine Type */
+#define MCH_TINY68K 0x80000000L
 
 /*
  * routines to make the io channel raw and restore it
@@ -49,8 +53,48 @@ int16_t has_bconmap(void)
 }
 int32_t old_bconmap_dev = -1;
 
+typedef struct
+{
+    long id;
+    long value;
+} COOKJAR;
+
+int get_cookie(long cookie, void *value)
+{
+    int result = 0;
+    COOKJAR *cookiejar = (COOKJAR *)(Setexc(0x5A0/4, (const void (*)(void)) -1 ));
+    if (cookiejar) {
+        for (int i = 0; cookiejar[i].id; i++) {
+             if (cookiejar[i].id == cookie) {
+                  if (value) {
+                      *(long *) value = cookiejar[i].value;
+                      result = 1;
+                      break;
+                  }
+             } 
+        }
+    }
+    return result;
+}
+
 void fd_init(void)
 {
+    /* - If AUX_DEV has been set on the command line, use that.
+     * - If we detect that we're running on a Tiny68K via the
+     *   cookie jar, use the default value appropriate to that.
+     * - Otherwise, use the hardcoded defaults given above.
+     */
+
+    if (AUX_DEV_CMD_LINE != -1) AUX_DEV = AUX_DEV_CMD_LINE;
+    else {
+        long cookie_value = -1;
+        int result = get_cookie(C__MCH, &cookie_value);
+        if (result && (cookie_value == MCH_TINY68K)) {
+            if (opt_v) printf("Tiny68k detected. Using device 10 for AUX port.\n");
+            AUX_DEV = 10;
+        }
+    }
+
     if (has_bconmap()) {
         /* Map in our device so that Iorec and Rsconf act on it. */
         old_bconmap_dev = Bconmap(AUX_DEV);
