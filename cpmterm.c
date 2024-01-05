@@ -183,3 +183,8 @@ int rx_raw(int timeout) {
     }
     return c;
 }
+
+int check_user_abort(void)
+{
+    return 0;
+}

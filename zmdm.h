@@ -63,6 +63,8 @@ EXTERN int management_protect;
 
 #define SMALL_TIMEOUT 2000  /* Two seconds (approx.) */
 
+int check_user_abort(void);
+
 void cleanup(void);
 
 void fd_init(void); /* make the io channel raw */

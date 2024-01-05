@@ -303,7 +303,7 @@ int send_file(char *name)
      * modification date
      */
 
-    sprintf(p, "%o ", fileio_get_modification_time(name));
+    sprintf(p, "%o ", (unsigned int) fileio_get_modification_time(name));
 
     p += strlen(p);
 

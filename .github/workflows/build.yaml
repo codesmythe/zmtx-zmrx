@@ -41,11 +41,9 @@ jobs:
         run: |
           git submodule init
           git submodule update
-          echo "CFLAGS += -DSTDIO_MAP_NEWLINE" > libcmini/Make.config
-          (cd libcmini; make)
           mkdir build
           cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain_file.txt ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake ..
           make
       - name: Build Z88DK 
         run: |

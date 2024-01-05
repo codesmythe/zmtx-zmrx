@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "zmodem.h"
 #define ZMDM
@@ -432,7 +433,7 @@ void tx_znak()
             default:
                 /*
                  * if all control characters should be escaped
-                 * and this one wasnt then its spurious and
+                 * and this one wasn't then its spurious and
                  * should be dropped.
                  */
                 if (escape_all_control_characters && (c & 0x60) == 0) {
@@ -632,6 +633,12 @@ int rx_data(unsigned char *p, int *l)
         sub_frame_type = rx_32_data(p, l);
     } else {
         sub_frame_type = rx_16_data(p, l);
+    }
+
+    if (check_user_abort()) {
+        cleanup();
+        printf("Exiting due to Control-C.\r\n");
+        exit(CAN);
     }
 
     switch (sub_frame_type) {
@@ -844,7 +851,7 @@ void rx_bin32_header(int to)
     unsigned long crc;
     unsigned long rxd_crc;
 
-    if (opt_d) fprintf(stderr, "rx binary header 32 bits crc\n");
+    if (opt_d) fprintf(stderr, "rx binary header 32 bits crc\r\n");
 
     crc = 0xffffffffL;
 
