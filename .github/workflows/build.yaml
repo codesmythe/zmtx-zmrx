@@ -41,10 +41,9 @@ jobs:
         run: |
           git submodule init
           git submodule update
-          (cd libcmini; make)
           mkdir build
           cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain_file.txt ..
+          cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake
           make
       - name: Build Z88DK 
         run: |
