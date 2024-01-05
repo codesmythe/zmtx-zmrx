@@ -43,7 +43,7 @@ jobs:
           git submodule update
           mkdir build
           cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake ..
           make
       - name: Build Z88DK 
         run: |
